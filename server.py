@@ -7,7 +7,7 @@ class Player:
         self.errors = 0
 
 def send_data_to_both_players(data):
-    for player in players:
+    for player in players: # may have used sendall, but needed to count errors for each player
         try:
             player.sock.send(data.encode())
             player.errors = 0
@@ -16,7 +16,8 @@ def send_data_to_both_players(data):
                 players.remove(player.sock)
                 player.sock.close()
                 print("Player disconnected")
-                end_game("one player disconnected")
+                if players.empty():
+                    end_game("all players disconnected")
 
 def end_game(msg):
     #sth to end the game
@@ -25,11 +26,14 @@ def end_game(msg):
 
 main_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 main_socket.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
-main_socket.bind(('', 1092))
+HOST = "127.0.0.1"  # localhost
+PORT = 1092 # any above 1023
+main_socket.bind((HOST, PORT))
 main_socket.setblocking(0)
-main_socket.listen(2)
+main_socket.listen(8)
+kExpectedPlayers = 1    #change anytime
 
-# making connection with 2 players
+# making connection with players
 players = []
 while True:
     try:  # connect players
@@ -37,10 +41,11 @@ while True:
         print("Connected ", addr)
         new_socket.setblocking(0)
         players.append(Player(new_socket))
-        if len(players) == 2:
+        if len(players) == kExpectedPlayers:
             break
     except:
-        print("nothing")
+        pass
+        # print("nothing")
     time.sleep(0.1)
 
 #ready to start the game
