@@ -1,9 +1,6 @@
 import socket
-import pygame
+import pickle
 
-def main():
-    screen = pygame.display.set_mode((W, H))
-    screen.fill((0, 0, 0))
 
 
 sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -12,9 +9,14 @@ HOST = "127.0.0.1"  # localhost
 PORT = 1092 # any above 1023
 sock.connect((HOST, PORT))
 
-pygame.init()
-W, H = 32 * 13 + 120, 32 * 13 + 120
-clock = pygame.time.Clock()
+def main():
+    pos = [1, 2, [1, 9]]
+    packed_pos = pickle.dumps(pos)
+    sock.send(packed_pos)
+    
+# pygame.init()
+# W, H = 32 * 13 + 120, 32 * 13 + 120
+# clock = pygame.time.Clock()
 
 while True:
     #sock.send("Some command".encode())
@@ -27,6 +29,5 @@ while True:
         break
 
 
-while do:
-    main()
-pygame.quit()
+# while do:
+main()
