@@ -280,10 +280,6 @@ class Block:
 
 def play1():
     print(keys[pygame.K_UP])
-    # global GAME_STARTED
-    # GAME_STARTED = True
-
-    # keys = pygame.key.get_pressed()
 
     for bomb in bombs:
         bomb.update()
@@ -297,9 +293,6 @@ def play1():
     for obj in objects:
         obj.draw()
     ui.draw()
-
-    # pygame.display.update()
-    # clock.tick(FPS)
 
 def f():
     global GAME_STARTED
@@ -335,17 +328,6 @@ make_grid()
 
 play = True
 while play:
-    # for event in pygame.event.get():
-    #     if event.type == pygame.QUIT:
-    #         play = False
-    #     elif event.type == pygame.KEYDOWN:
-    #         if event.key == pygame.K_UP:
-    #             menu.switch(-1)
-    #         elif event.key == pygame.K_DOWN:
-    #             menu.switch(1)
-    #         elif event.key == pygame.K_SPACE:
-    #             menu.select()
-
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             play = False
@@ -362,20 +344,6 @@ while play:
     print(keys[pygame.K_UP])
     if GAME_STARTED:
         play1()
-    # keys = pygame.key.get_pressed()
-
-    # for bomb in bombs:
-    #     bomb.update()
-    # for obj in objects:
-    #     obj.update()
-    # ui.update()
-    #
-    # window.fill('black')
-    # for bomb in bombs:
-    #     bomb.draw()
-    # for obj in objects:
-    #     obj.draw()
-    # ui.draw()
 
     pygame.display.update()
     clock.tick(FPS)
