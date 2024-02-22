@@ -48,7 +48,7 @@ class Menu:
         self.callbacks = []
         self.currentOptionInd = 1
 
-    def append_option(self, option, callback, color = 'purple'):
+    def append_option(self, option, callback, color='purple'):
 
         self.menuOptions.append(fontUI.render(option, 1, color))
         self.callbacks.append(callback)
@@ -59,9 +59,9 @@ class Menu:
     def select(self):
         self.callbacks[self.currentOptionInd]()
 
-    def draw(self, surface, x, y, deltaY):
+    def draw(self, surface, deltaY):
         for i, option in enumerate(self.menuOptions):
-            option_rect = option.get_rect(topleft=(x, y + i * deltaY))
+            option_rect = option.get_rect(center=(WIDTH // 2, HEIGHT // 2 + i * deltaY - 75))
             if i == self.currentOptionInd:
                 pygame.draw.rect(surface, 'white', option_rect)
             else:
@@ -273,13 +273,16 @@ class Block:
     def draw(self):
         window.blit(imgBrick, self.rect)
 
+
+
+
     def damage(self, value):
         self.hp -= value
         if self.hp <= 0:
             objects.remove(self)
 
 def play1():
-    print(keys[pygame.K_UP])
+    # print(keys[pygame.K_UP])
 
     for bomb in bombs:
         bomb.update()
@@ -299,7 +302,7 @@ def f():
     GAME_STARTED = True
 
 menu = Menu()
-menu.append_option('Welcome to best game ever!', lambda: print('Welcome'), 'orange')
+menu.append_option('Welcome to the best game ever!', lambda: print('Welcome'), 'orange')
 menu.append_option('Quit', lambda: pygame.quit())
 menu.append_option('Play', lambda: f())
 
@@ -339,9 +342,9 @@ while play:
             elif event.key == pygame.K_RETURN:
                 menu.select()
         if not GAME_STARTED:
-            menu.draw(window, 100, 100, 75)
+            menu.draw(window, 100)
     keys = pygame.key.get_pressed()
-    print(keys[pygame.K_UP])
+    # print(keys[pygame.K_UP])
     if GAME_STARTED:
         play1()
 
