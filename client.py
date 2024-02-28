@@ -5,9 +5,8 @@ from pickle import loads, dumps
 
 sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 sock.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
-HOST = "127.0.0.1"  # localhost
-PORT = 1092 # any above 1023
-sock.connect((HOST, PORT))
+HOST = '127.0.0.1'  # localhost
+PORT = 1093 # any above 1023
 
 pygame.init()
 
@@ -23,8 +22,8 @@ fontUI = pygame.font.Font(None, 30)
 
 imgBrick = pygame.image.load('images/block_brick.png')
 imgTanks = {
-    "red": pygame.transform.scale(pygame.image.load('images/player_red.png'), (27, 27)),
-    "blue": pygame.transform.scale(pygame.image.load('images/player_blue.png'), (27, 27)),
+    'red': pygame.transform.scale(pygame.image.load('images/player_red.png'), (27, 27)),
+    'blue': pygame.transform.scale(pygame.image.load('images/player_blue.png'), (27, 27)),
 }
 imgBangs = [
     pygame.image.load('images/bang1.png'),
@@ -34,19 +33,11 @@ imgBangs = [
 
 
 DIRECTS = [[0, -1], [1, 0], [0, 1], [-1, 0]]
-BLOCKS = [(544, 512), (192, 480), (96, 448), (352, 320), (64, 256), (448, 320), (224, 288), (608, 416), (736, 96),
-          (224, 352), (448, 544), (736, 320), (384, 160), (288, 448), (32, 544), (544, 128), (320, 256), (320, 32),
-          (64, 96), (128, 64), (480, 128), (704, 448), (64, 416), (192, 288), (160, 448), (128, 448), (0, 256),
-          (0, 320), (288, 480), (0, 544), (768, 416), (384, 384), (416, 512), (0, 64), (480, 512), (640, 448),
-          (96, 64), (64, 64), (736, 224), (672, 224), (352, 416), (608, 448), (544, 32), (384, 128), (0, 480),
-          (288, 416), (192, 416), (608, 384), (448, 288), (512, 512), (736, 448), (160, 192), (704, 512), (160, 64),
-          (736, 512), (512, 320), (320, 96), (288, 544), (160, 416), (384, 32), (0, 192), (736, 160), (288, 160),
-          (512, 224), (352, 256), (320, 352), (32, 288), (224, 480), (192, 224), (128, 320), (608, 288), (64, 512),
-          (352, 384), (448, 512), (224, 544), (608, 320), (608, 128), (96, 32), (480, 288), (224, 384)]
+BLOCKS_LAYOUT = []
 
 
 def make_grid():
-    for (x, y) in BLOCKS:
+    for (x, y) in BLOCKS_LAYOUT:
         Block(x, y, TILE)
 
 class Menu:
@@ -62,7 +53,6 @@ class Menu:
 
     def switch(self, direction):
         self.currentOptionInd = max(1, min(self.currentOptionInd + direction, len(self.menuOptions) - 1))
-        # self.currentOptionInd = min(max(0, self.currentOptionInd + direction), len(self.menuOptions) - 1)
     def select(self):
         self.callbacks[self.currentOptionInd]()
 
@@ -100,7 +90,6 @@ class UI:
                     rect = text.get_rect()
 
                 pygame.draw.rect(window, 'white', (rect.left - 4, rect.top - 3, 8 + rect.width, 6 + rect.height))
-                # rect = text.get_rect(center=(250 + i * 300 + 32, 5 + 11))
 
                 window.blit(text, rect)
                 i += 1
@@ -110,9 +99,8 @@ class UI:
         if len(tanksAlive) == 1 or seconds <= 0:
             winnerPoints = max(tanksAlive, key=lambda tank: tank.points).points
             winners = [tank.color for tank in tanksAlive if tank.points == winnerPoints]
-            color = "purple" if len(winners) > 1 else winners[0]
-            winnersText = "Draw!" if len(winners) > 1 else f'{winners[0]} wins'
-            # pygame.draw.rect(window, 'brown', (200, 200, 300, 200))
+            color = 'purple' if len(winners) > 1 else winners[0]
+            winnersText = 'Draw!' if len(winners) > 1 else f'{winners[0]} wins'
             gameOverText = fontUI.render(f'Game over', 1, color)
             gameOverRect = gameOverText.get_rect(bottom=HEIGHT // 2, centerx=WIDTH // 2)
             winnerText = fontUI.render(winnersText, 1, color)
@@ -122,10 +110,9 @@ class UI:
             window.blit(winnerText, winnerRect)
         else:
             self.seconds = seconds
-        timerText = fontUI.render(f'{self.seconds // 60}:{(self.seconds % 60):02d}', 1, "white")
+        timerText = fontUI.render(f'{self.seconds // 60}:{(self.seconds % 60):02d}', 1, 'white')
         timerRect = timerText.get_rect(centerx=WIDTH // 2, top=6)
         window.blit(timerText, timerRect)
-
 
 
 class MyTank:
@@ -160,8 +147,6 @@ class MyTank:
         if self.hp <= 0:
             return
 
-        # self.image = pygame.transform.rotate(imgTanks[self.color], -self.direct * 90)
-        # self.image = pygame.transform.scale(self.image, (self.image.get_width() - 5, self.image.get_height() - 5))
         self.rect = self.image.get_rect(center=self.rect.center)
 
         oldX, oldY = self.rect.topleft
@@ -197,48 +182,56 @@ class MyTank:
             print(self.color, 'dead')
 
     def get_data(self):
-        return ["tank", {"pos" : [self.rect.x, self.rect.y, DIRECTS[self.direct]], "hp" : self.hp, }]
+        return [['name', self.server_name], ['pos' , [self.rect.x, self.rect.y]], ['hp', self.hp]]
 
 class EnemyTank:
-    def __init__(self, server_name):
+    def __init__(self, server_name, pos, color, direct):
         self.server_name = server_name
-        self.px = 0
-        self.py = 0
+        objects.append(self)
+        # self.type = 'enemy'
+        # self.__px = pos[0]
+        # self.__py = pos[1]
+        self.type = 'tank'
+        self.px = pos[0]
+        self.py = pos[1]
         self.direct = 0
+        self.color = color
+        self.rect = pygame.Rect(pos[0], pos[1], TILE, TILE)
+        self.direct = direct
+        self.moveSpeed = 2
+        # self.__hp = 5
+        self.hp = 5
 
+        self.shotTimer = 0
+        self.shotDelay = 60
+        self.bulletSpeed = 5
+        self.bulletDamage = 1
+
+        self.image = imgTanks[self.color]
+        self.rect = self.image.get_rect(center=self.rect.center)
+
+        self.points = 0
+
+    def update_position(self, pos): #[x, y]
+        if self.hp <= 0:
+            return
+
+        self.rect = self.image.get_rect(center=self.rect.center)
+        self.rect.x = pos[0]
+        self.rect.y = pos[1]
+
+    # def update_hp(self, hp):
+    #     self.__hp = hp
+
+    # def get_hp(self):
+    #     return self.__hp
+    
     def update(self):
         pass
 
     def draw(self):
-        pass
-
-# class Bullet:
-    def __init__(self, parent, px, py, dx, dy, damage):
-        bullets.append(self)
-        self.parent = parent
-        self.px, self.py = px, py
-        self.dx, self.dy = dx, dy
-        self.damage = damage
-
-    def update(self):
-        self.px += self.dx
-        self.py += self.dy
-
-        if self.px < 0 or self.px > WIDTH or self.py < 0 or self.py > HEIGHT:
-            bullets.remove(self)
-        else:
-            for obj in objects:
-                if obj != self.parent and obj.rect.collidepoint(self.px, self.py):
-                    obj.damage(self.damage)
-                    bullets.remove(self)
-                    break
-
-    def draw(self):
-        pygame.draw.circle(window, 'yellow', (self.px, self.py), 2)
-
-    def get_data(self):
-        # return [self.px, self.py]
-        return ["bullet"]
+        if self.hp > 0:
+            window.blit(self.image, self.rect)
 
 
 class Bomb:
@@ -316,63 +309,64 @@ class Block:
             objects.remove(self)
 
     def get_data(self):
-        return ["block"]
+        return ['block']
 
-def play1():
-    # print(keys[pygame.K_UP])
 
-    for bomb in bombs:
-        bomb.update()
-    for obj in objects:
-        obj.update()
-    ui.update()
+def game_play_pressed():
+    global GAME_STARTED, all_players_names, BLOCKS_LAYOUT, my_tank, enemies, objects, sock
+    sock.connect((HOST, PORT))
+    name, color, pos = 0, 0, 0
+    enemies_colors, enemies_positions = [], []
+    while True:
+        data = loads(sock.recv(1024))
+        # print(data)
+        if len(data) > 0 and len(data[0]) > 0 and data[0][1] == 'start':
+            GAME_STARTED = True
+            for [key, value] in data[1:]:
+                if key == 'all_players_names':
+                    all_players_names = value
+                elif key == 'field_layout':
+                    BLOCKS_LAYOUT = value
+                elif key == 'your_name':
+                    name = value
+                elif key == 'your_color':
+                    color = value
+                elif key == 'your_position':
+                    pos = value
+                elif key == 'all_players_colors':
+                    enemies_colors = value
+                elif key == 'all_players_positions':
+                    enemies_positions = value
+            break
+    my_tank = MyTank(color, pos[0], pos[1], 0, (pygame.K_LEFT, pygame.K_RIGHT, pygame.K_UP, pygame.K_DOWN, pygame.K_0))
+    my_tank.server_name = name
+    for i in range (len(all_players_names)):
+        name = all_players_names[i]
+        if name == my_tank.server_name:
+            continue
+        enemies[name] = EnemyTank(name, enemies_positions[i], enemies_colors[i], 0)
+    make_grid()
 
-    window.fill('black')
-    for bomb in bombs:
-        bomb.draw()
-    for obj in objects:
-        obj.draw()
-    ui.draw()
 
-def f():
-    global GAME_STARTED
-    GAME_STARTED = True
-
-# bullets = []
-# objects = []
 # # MyTank('blue', 100, 275, 0, (pygame.K_a, pygame.K_d, pygame.K_w, pygame.K_s, pygame.K_SPACE))
 # my_tank = MyTank('red', 650, 275, 0, (pygame.K_LEFT, pygame.K_RIGHT, pygame.K_UP, pygame.K_DOWN, pygame.K_0))
 
-    
+
 menu = Menu()
 menu.append_option('Welcome to the best game ever!', lambda: print('Welcome'), 'orange')
 menu.append_option('Quit', lambda: pygame.quit())
-menu.append_option('Play', lambda: f())
+menu.append_option('Play', lambda: game_play_pressed())
 
 bombs = []
 objects = []
-MyTank('blue', 100, 275, 0, (pygame.K_a, pygame.K_d, pygame.K_w, pygame.K_s, pygame.K_SPACE))
-MyTank('red', 650, 275, 0, (pygame.K_LEFT, pygame.K_RIGHT, pygame.K_UP, pygame.K_DOWN, pygame.K_0))
+# my_tank = MyTank('red', 0, 0, 0, (pygame.K_a, pygame.K_d, pygame.K_w, pygame.K_s, pygame.K_SPACE))
+# MyTank('red', 650, 275, 0, (pygame.K_LEFT, pygame.K_RIGHT, pygame.K_UP, pygame.K_DOWN, pygame.K_0))
 ui = UI()
-make_grid()
 
-play = False
+play = True
 all_players_names = []
-while True:
-    data = loads(sock.recv(1024))
-    print(data)
-    if len(data) == 3 and data[1] == "start":
-        play = True
-        MyTank.server_name = data[0]
-        all_players_names = data[2]
-        break
-
 enemies = {}
-for name in all_players_names:
-    # enemies[name] = EnemyTank(name)
-    # objects.append(enemies[name])
-    print(name)
-
+errors = 0
 while play:
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
@@ -387,12 +381,41 @@ while play:
         if not GAME_STARTED:
             menu.draw(window, 100)
     keys = pygame.key.get_pressed()
-    # print(keys[pygame.K_UP])
     if GAME_STARTED:
-        play1()
+        for bomb in bombs:
+            bomb.update()
+        for obj in objects:
+            obj.update()
+        ui.update()
+        data = []
+        try:
+            sock.send(dumps(my_tank.get_data()))
+            errors = 0
+        except:
+            errors +=1
+        try:
+            data = loads(sock.recv(1024))
+            errors = 0
+            if len(data) > 0 and len(data[0]) > 1 and len(data[0][1]) > 0:
+                for i in range(len(data[0][1])):
+                    if data[0][1][i] == my_tank.server_name:
+                        continue
+                    enemies[data[0][1][i]].update_position(data[1][1][i]) #[x, y]
+                    print('new pos for enemy:', data[1][1][i])
+        except:
+            errors +=1
+        window.fill('black')
+        for bomb in bombs:
+            bomb.draw()
+        for obj in objects:
+            obj.draw()
+        ui.draw()
 
     pygame.display.update()
     clock.tick(FPS)
+
+    # if errors >= 1000:
+    #     play = False
 
 
 pygame.quit()
