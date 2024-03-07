@@ -1,5 +1,4 @@
 import socket
-import time
 import pickle
 
 BLOCKS = [(544, 512), (192, 480), (96, 448), (352, 320), (64, 256), (448, 320), (224, 288), (608, 416), (736, 96),
@@ -20,29 +19,23 @@ class Player:
         self.pos = pos
         self.color = color
         self.hp = 5
+        self.bombs = []
         self.received_data = []
 
-    def remove_from_game(self):
-        if self.sock in players:
-            players.remove(self.sock)
-            self.sock.close()
-            print("Player disconnected")
-            if players.empty():
-                end_game("all players disconnected")
+def remove_from_game(player):
+    global players
+    if player in players:
+        players.remove(player)
+        player.sock.close()
+        print("Player disconnected")
+        if len(players) == 0:
+            end_game("all players disconnected")
 
-
-def send_data_to_all_players(data):
-    for player in players: # may have used sendall, but needed to count errors for each player
-        try:
-            player.sock.send(pickle.dumps([player.name] + data))
-            player.errors = 0
-        except:
-            if player.errors >= 10:
-                player.remove_from_game()
 
 def end_game(msg):
     #sth to end the game
     print("GAME ENDED: ", msg)
+    exit(0)
 
 
 main_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -74,7 +67,6 @@ while True:
         pass
 
 #ready to start the game
-# send_data_to_all_players(["start", ["all_players_names", names], ["field_layout", BLOCKS]])
 for player in players: # may have used sendall, but needed to count errors for each player
         try:
             player.sock.send(pickle.dumps([["message", "start"], ["all_players_names", names], ["field_layout", BLOCKS],
@@ -83,15 +75,15 @@ for player in players: # may have used sendall, but needed to count errors for e
             player.errors = 0
         except:
             if player.errors >= 10:
-                player.remove_from_game()
+                remove_from_game(player)
 
 
 while True:
-# for i in range(10):
     # read players" commands
     received_data_name_order = []
     positions = []
     hps = []
+    bombs = []
     for player in players:
         try:
             data = pickle.loads(player.sock.recv(1024))
@@ -99,31 +91,34 @@ while True:
                 # key, value = data[i][0], data[i][1]
                 if key == "pos":
                     player.pos = value
-                    received_data_name_order += [list(data[0][1])]
+                    received_data_name_order += [data[0][1]]
                     positions.append(value)
                 if key == "hp":
                     player.hp = value
                     hps.append(value)
+                if key == "bombs":
+                    player.bombs = value
+                    bombs.append(value)
+
         except:
             player.errors += 1
             if player.errors >= 10:
-                player.remove_from_game()
-            # print("error")
+                remove_from_game(player)
     # parse commands
 
     #sending new positions and hp_s to players
     if len(received_data_name_order) == 0:
         continue
-    print("received", positions, received_data_name_order)
+    # print("received", positions, received_data_name_order)
     for player in players:
         try:
-            player.sock.send(pickle.dumps([["names", received_data_name_order], ["positions", positions], ["hps", hps]]))
+            player.sock.send(pickle.dumps([["names", received_data_name_order], ["positions", positions], ["hps", hps], ["bombs", bombs]]))
             # print("sent", received_data_name_order, positions)
             player.errors = 0
         except:
             player.errors += 1
-            if player.errors >= 100:
-                player.remove_from_game()
+            if player.errors >= 10:
+                remove_from_game(player)
     if len(players) == 0:
         break
 

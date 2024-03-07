@@ -2,6 +2,7 @@ import pygame
 from random import randint
 import socket
 from pickle import loads, dumps
+from time import time
 
 sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 sock.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
@@ -14,9 +15,9 @@ WIDTH, HEIGHT = 800, 600
 FPS = 60
 TILE = 50
 GAME_STARTED = False
+time_started = 0
 
 window = pygame.display.set_mode((WIDTH, HEIGHT))
-clock = pygame.time.Clock()
 
 fontUI = pygame.font.Font(None, 30)
 
@@ -94,7 +95,9 @@ class UI:
                 window.blit(text, rect)
                 i += 1
 
-        seconds = max(0, 180 - pygame.time.get_ticks() // 1000)
+        # seconds = max(0, 180 - pygame.time.get_ticks() // 1000)
+        seconds = max(0, 180 - int(time() - time_started))
+
 
         if len(tanksAlive) == 1 or seconds <= 0:
             winnerPoints = max(tanksAlive, key=lambda tank: tank.points).points
@@ -142,6 +145,7 @@ class MyTank:
         self.rect = self.image.get_rect(center=self.rect.center)
 
         self.points = 0
+        self.bombs_to_send = []
 
     def update(self):
         if self.hp <= 0:
@@ -168,6 +172,7 @@ class MyTank:
         if keys[self.keySHOT] and self.shotTimer == 0:
             Bomb(self, self.rect.centerx, self.rect.centery)
             self.shotTimer = self.shotDelay
+            self.bombs_to_send.append([self.rect.centerx, self.rect.centery])
 
         if self.shotTimer > 0:
             self.shotTimer -= 1
@@ -182,7 +187,7 @@ class MyTank:
             print(self.color, 'dead')
 
     def get_data(self):
-        return [['name', self.server_name], ['pos' , [self.rect.x, self.rect.y]], ['hp', self.hp]]
+        return [['name', self.server_name], ['pos' , [self.rect.x, self.rect.y]], ['hp', self.hp], ['bombs', self.bombs_to_send]]
 
 class EnemyTank:
     def __init__(self, server_name, pos, color, direct):
@@ -199,7 +204,6 @@ class EnemyTank:
         self.rect = pygame.Rect(pos[0], pos[1], TILE, TILE)
         self.direct = direct
         self.moveSpeed = 2
-        # self.__hp = 5
         self.hp = 5
 
         self.shotTimer = 0
@@ -225,6 +229,10 @@ class EnemyTank:
 
     # def get_hp(self):
     #     return self.__hp
+    def damage(self, value):
+        self.hp -= value
+        if self.hp <= 0:
+            print(self.color, 'dead')
     
     def update(self):
         pass
@@ -313,13 +321,12 @@ class Block:
 
 
 def game_play_pressed():
-    global GAME_STARTED, all_players_names, BLOCKS_LAYOUT, my_tank, enemies, objects, sock
+    global GAME_STARTED, all_players_names, BLOCKS_LAYOUT, my_tank, enemies, objects, sock, time_started
     sock.connect((HOST, PORT))
     name, color, pos = 0, 0, 0
     enemies_colors, enemies_positions = [], []
     while True:
         data = loads(sock.recv(1024))
-        # print(data)
         if len(data) > 0 and len(data[0]) > 0 and data[0][1] == 'start':
             GAME_STARTED = True
             for [key, value] in data[1:]:
@@ -338,7 +345,7 @@ def game_play_pressed():
                 elif key == 'all_players_positions':
                     enemies_positions = value
             break
-    my_tank = MyTank(color, pos[0], pos[1], 0, (pygame.K_LEFT, pygame.K_RIGHT, pygame.K_UP, pygame.K_DOWN, pygame.K_0))
+    my_tank = MyTank(color, pos[0], pos[1], 0, (pygame.K_LEFT, pygame.K_RIGHT, pygame.K_UP, pygame.K_DOWN, pygame.K_SPACE))
     my_tank.server_name = name
     for i in range (len(all_players_names)):
         name = all_players_names[i]
@@ -346,6 +353,7 @@ def game_play_pressed():
             continue
         enemies[name] = EnemyTank(name, enemies_positions[i], enemies_colors[i], 0)
     make_grid()
+    time_started = time()
 
 
 # # MyTank('blue', 100, 275, 0, (pygame.K_a, pygame.K_d, pygame.K_w, pygame.K_s, pygame.K_SPACE))
@@ -367,6 +375,8 @@ play = True
 all_players_names = []
 enemies = {}
 errors = 0
+clock = pygame.time.Clock()
+
 while play:
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
@@ -390,18 +400,21 @@ while play:
         data = []
         try:
             sock.send(dumps(my_tank.get_data()))
+            my_tank.bombs_to_send.clear()
             errors = 0
         except:
             errors +=1
         try:
             data = loads(sock.recv(1024))
             errors = 0
-            if len(data) > 0 and len(data[0]) > 1 and len(data[0][1]) > 0:
-                for i in range(len(data[0][1])):
+            if len(data) > 0 and len(data[0]) > 1:
+                for i in range(len(data[0][1])): 
                     if data[0][1][i] == my_tank.server_name:
                         continue
                     enemies[data[0][1][i]].update_position(data[1][1][i]) #[x, y]
-                    print('new pos for enemy:', data[1][1][i])
+                    for j in data[3][1][i]:
+                        Bomb(enemies[data[0][1][i]], j[0], j[1])
+
         except:
             errors +=1
         window.fill('black')
@@ -410,12 +423,12 @@ while play:
         for obj in objects:
             obj.draw()
         ui.draw()
+        clock.tick(FPS)
 
     pygame.display.update()
-    clock.tick(FPS)
 
-    # if errors >= 1000:
-    #     play = False
+    if errors >= 1000:
+        play = False
 
 
 pygame.quit()
