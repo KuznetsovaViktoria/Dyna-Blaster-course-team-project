@@ -395,14 +395,17 @@ while play:
             errors +=1
         try:
             data = loads(sock.recv(1024))
+            print(data)
             errors = 0
             if len(data) > 0 and len(data[0]) > 1 and len(data[0][1]) > 0:
                 for i in range(len(data[0][1])):
+                    print(data[0][1][i], my_tank.server_name)
                     if data[0][1][i] == my_tank.server_name:
                         continue
                     enemies[data[0][1][i]].update_position(data[1][1][i]) #[x, y]
                     print('new pos for enemy:', data[1][1][i])
-        except:
+        except Exception as E:
+            print(E)
             errors +=1
         window.fill('black')
         for bomb in bombs:

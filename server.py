@@ -95,11 +95,12 @@ while True:
     for player in players:
         try:
             data = pickle.loads(player.sock.recv(1024))
+            print(data)
             for [key, value] in data[1:]:
                 # key, value = data[i][0], data[i][1]
                 if key == "pos":
                     player.pos = value
-                    received_data_name_order += [list(data[0][1])]
+                    received_data_name_order += [data[0][1]]
                     positions.append(value)
                 if key == "hp":
                     player.hp = value

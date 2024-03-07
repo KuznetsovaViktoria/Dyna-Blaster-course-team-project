@@ -5,7 +5,7 @@ from pickle import loads, dumps
 
 pygame.init()
 
-WIDTH, HEIGHT = 800, 600
+WIDTH, HEIGHT = 600, 600
 FPS = 60
 TILE = 32
 GAME_STARTED = False
@@ -309,7 +309,7 @@ menu.append_option('Play', lambda: f())
 bombs = []
 objects = []
 Tank('blue', 100, 275, 0, (pygame.K_a, pygame.K_d, pygame.K_w, pygame.K_s, pygame.K_SPACE))
-Tank('red', 650, 275, 0, (pygame.K_LEFT, pygame.K_RIGHT, pygame.K_UP, pygame.K_DOWN, pygame.K_0))
+Tank('red', 415, 275, 0, (pygame.K_LEFT, pygame.K_RIGHT, pygame.K_UP, pygame.K_DOWN, pygame.K_0))
 ui = UI()
 make_grid()
 
