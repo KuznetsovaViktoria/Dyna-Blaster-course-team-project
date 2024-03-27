@@ -1,4 +1,5 @@
 import pygame
+from bot_example import get_bot_move
 import socket
 from pickle import loads, dumps
 from time import time
@@ -83,6 +84,7 @@ class UI:
         pass
 
     def draw(self):
+        global GAME_STARTED
         i = 0
         tanksAlive = []
         pygame.draw.rect(window, 'white', (0, 0, WIDTH, TILE))
@@ -137,7 +139,7 @@ class MyTank:
         self.hp = 1
 
         self.shotTimer = 0
-        self.shotDelay = 15
+        self.shotDelay = 20
 
         self.keyLEFT = keyList[0]
         self.keyRIGHT = keyList[1]
@@ -151,29 +153,29 @@ class MyTank:
         self.points = 0
         self.bombs_to_send = []
 
-    def update(self):
+    def update(self, key_pressed):
         if self.hp <= 0:
             return
 
         self.rect = self.image.get_rect(center=self.rect.center)
 
         oldX, oldY = self.rect.topleft
-        if keys[self.keyLEFT]:
+        if key_pressed == self.keyLEFT:
             self.rect.x = max(0, self.rect.x - self.moveSpeed)
             self.direct = 0
-        elif keys[self.keyRIGHT]:
+        elif key_pressed == self.keyRIGHT:
             self.rect.x = min(WIDTH - TILE, self.rect.x + self.moveSpeed)
             self.direct = 1
-        elif keys[self.keyUP]:
+        elif key_pressed == self.keyUP:
             self.rect.y = max(TILE, self.rect.y - self.moveSpeed)
-        elif keys[self.keyDOWN]:
+        elif key_pressed == self.keyDOWN:
             self.rect.y = min(HEIGHT - TILE, self.rect.y + self.moveSpeed)
 
         for obj in objects:
             if obj != self and obj.type in ['block', 'block_cant_broke'] and self.rect.colliderect(obj.rect):
                 self.rect.topleft = oldX, oldY
 
-        if keys[self.keySHOT] and self.shotTimer == 0:
+        if key_pressed == self.keySHOT and self.shotTimer == 0:
             Bomb(self, self.rect.centerx, self.rect.centery)
             self.shotTimer = self.shotDelay
             self.bombs_to_send.append([self.rect.centerx, self.rect.centery])
@@ -217,7 +219,7 @@ class EnemyTank:
         self.rect.x = pos[0]
         self.rect.y = pos[1]
 
-    def update(self):
+    def update(self, key):
         pass
 
     def damage(self, value):
@@ -302,9 +304,11 @@ class Block:
         window.blit(imgBrick, self.rect)
         
     def damage(self, value):
+        global BLOCKS_LAYOUT
         self.hp -= value
         if self.hp <= 0:
             objects.remove(self)
+            BLOCKS_LAYOUT.remove([self.rect.x, self.rect.y])
 
     def get_data(self):
         return ['block']
@@ -381,11 +385,11 @@ all_players_names = []
 enemies = {}
 errors = 0
 clock = pygame.time.Clock()
-
 while play:
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             play = False
+            break
         elif not GAME_STARTED and event.type == pygame.KEYDOWN:
             if event.key == pygame.K_UP:
                 menu.switch(-1)
@@ -396,12 +400,17 @@ while play:
         if not GAME_STARTED:
             window.blit(imgBackground, (0, 0))
             menu.draw(window, 100)
-    keys = pygame.key.get_pressed()
+    if not play:
+        break 
     if GAME_STARTED:
+        bot_move = get_bot_move([[e.rect.x, e.rect.y] for e in enemies], [[b.px, b.py] for b in bombs],  BLOCKS_LAYOUT, BLOCKS_CANT_BROKE_LAYOUT)
         for bomb in bombs:
             bomb.update()
         for obj in objects:
-            obj.update()
+            if obj.type == 'tank':
+                obj.update(bot_move)
+            else:
+                obj.update()
         ui.update()
         data = []
         try:
@@ -439,7 +448,7 @@ while play:
 
     pygame.display.update()
 
-    if errors >= 1000:
+    if errors >= 100:
         play = False
 
 
