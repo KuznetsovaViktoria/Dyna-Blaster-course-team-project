@@ -14,7 +14,7 @@ pygame.init()
 TILE = 50
 WIDTH = 650
 HEIGHT = WIDTH + TILE
-FPS = 60
+FPS = 10
 GAME_STARTED = False
 time_started = 0
 
@@ -100,12 +100,9 @@ class UI:
                 else:
                     rect = text.get_rect()
 
-                # pygame.draw.rect(window, 'white', (rect.left - 4, rect.top - 3, 8 + rect.width, 6 + rect.height))
-
                 window.blit(text, rect)
                 i += 1
 
-        # seconds = max(0, 180 - pygame.time.get_ticks() // 1000)
         seconds = max(0, 180 - int(time() - time_started))
 
 
@@ -119,7 +116,6 @@ class UI:
             gameOverRect = gameOverText.get_rect(bottom=HEIGHT // 2, centerx=WIDTH // 2)
             winnerText = endgameFontUI.render(winnersText, 1, color)
             winnerRect = winnerText.get_rect(top=HEIGHT // 2, centerx=WIDTH // 2)
-            # pygame.draw.rect(window, 'white', (min(gameOverRect.left, winnerRect.left) - 4, min(gameOverRect.top, winnerRect.top) - 3, 8 + max(gameOverRect.width, winnerRect.width), 6 + gameOverRect.height + winnerRect.height))
             window.blit(gameOverText, gameOverRect)
             window.blit(winnerText, winnerRect)
         else:
@@ -138,13 +134,11 @@ class MyTank:
         self.color = color
         self.rect = pygame.Rect(px, py, TILE - 5, TILE - 5)
         self.direct = direct
-        self.moveSpeed = 2
+        self.moveSpeed = TILE // 2
         self.hp = 1
 
         self.shotTimer = 0
-        self.shotDelay = 60
-        self.bulletSpeed = 5
-        self.bulletDamage = 1
+        self.shotDelay = 20
 
         self.keyLEFT = keyList[0]
         self.keyRIGHT = keyList[1]
@@ -204,23 +198,12 @@ class EnemyTank:
     def __init__(self, server_name, pos, color, direct):
         self.server_name = server_name
         objects.append(self)
-        # self.type = 'enemy'
-        # self.__px = pos[0]
-        # self.__py = pos[1]
         self.type = 'tank'
         self.px = pos[0]
         self.py = pos[1]
-        self.direct = 0
         self.color = color
         self.rect = pygame.Rect(pos[0], pos[1], TILE, TILE)
-        self.direct = direct
-        self.moveSpeed = 2
         self.hp = 1
-
-        self.shotTimer = 0
-        self.shotDelay = 60
-        self.bulletSpeed = 5
-        self.bulletDamage = 1
 
         self.image = imgTanks[self.color]
         self.rect = self.image.get_rect(center=self.rect.center)
@@ -235,19 +218,14 @@ class EnemyTank:
         self.rect.x = pos[0]
         self.rect.y = pos[1]
 
-    # def update_hp(self, hp):
-    #     self.__hp = hp
+    def update(self):
+        pass
 
-    # def get_hp(self):
-    #     return self.__hp
     def damage(self, value):
         self.hp -= value
         if self.hp <= 0:
             print(self.color, 'dead')
     
-    def update(self):
-        pass
-
     def draw(self):
         if self.hp > 0:
             window.blit(self.image, self.rect)
@@ -259,7 +237,7 @@ class Bomb:
         self.px, self.py = px, py
         self.length = length
         self.damage = 1
-        self.timer = 3 * FPS
+        self.timer = FPS
         self.parent = parent
 
     def update(self):
@@ -301,7 +279,7 @@ class Bang:
         self.frame = 0
 
     def update(self):
-        self.frame += 0.2
+        self.frame += 0.4
         if self.frame >= 3:
             objects.remove(self)
 
@@ -390,10 +368,6 @@ def game_play_pressed():
     time_started = time()
 
 
-# # MyTank('blue', 100, 275, 0, (pygame.K_a, pygame.K_d, pygame.K_w, pygame.K_s, pygame.K_SPACE))
-# my_tank = MyTank('red', 650, 275, 0, (pygame.K_LEFT, pygame.K_RIGHT, pygame.K_UP, pygame.K_DOWN, pygame.K_0))
-
-
 menu = Menu()
 menu.append_option('Welcome to the best game ever!', lambda: print('Welcome'), 'brown')
 menu.append_option('Play', lambda: game_play_pressed())
@@ -401,8 +375,6 @@ menu.append_option('Quit', lambda: pygame.quit())
 
 bombs = []
 objects = []
-# my_tank = MyTank('red', 0, 0, 0, (pygame.K_a, pygame.K_d, pygame.K_w, pygame.K_s, pygame.K_SPACE))
-# MyTank('red', 650, 275, 0, (pygame.K_LEFT, pygame.K_RIGHT, pygame.K_UP, pygame.K_DOWN, pygame.K_0))
 ui = UI()
 
 play = True
