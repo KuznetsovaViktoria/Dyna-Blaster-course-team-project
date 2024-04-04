@@ -84,7 +84,7 @@ class UI:
         pass
 
     def draw(self):
-        global GAME_STARTED
+        global GAME_FINISHED
         i = 0
         tanksAlive = []
         pygame.draw.rect(window, 'white', (0, 0, WIDTH, TILE))
@@ -108,6 +108,7 @@ class UI:
 
 
         if len(tanksAlive) == 1 or seconds <= 0:
+            GAME_FINISHED = True
             window.blit(imgBackground, (0, 0))
             winnerPoints = max(tanksAlive, key=lambda tank: tank.points).points
             winners = [tank.color for tank in tanksAlive if tank.points == winnerPoints]
@@ -139,7 +140,7 @@ class MyTank:
         self.hp = 1
 
         self.shotTimer = 0
-        self.shotDelay = 20
+        self.shotDelay = 15
 
         self.keyLEFT = keyList[0]
         self.keyRIGHT = keyList[1]
@@ -308,7 +309,8 @@ class Block:
         self.hp -= value
         if self.hp <= 0:
             objects.remove(self)
-            BLOCKS_LAYOUT.remove([self.rect.x, self.rect.y])
+            if (self.rect.x, self.rect.y) in BLOCKS_LAYOUT:
+                BLOCKS_LAYOUT.remove((self.rect.x, self.rect.y))
 
     def get_data(self):
         return ['block']
@@ -342,6 +344,7 @@ def game_play_pressed():
     enemies_colors, enemies_positions = [], []
     while True:
         data = loads(sock.recv(1024))
+        sock.settimeout(0.5)
         if len(data) > 0 and len(data[0]) > 0 and data[0][1] == 'start':
             GAME_STARTED = True
             for [key, value] in data[1:]:
@@ -385,6 +388,7 @@ all_players_names = []
 enemies = {}
 errors = 0
 clock = pygame.time.Clock()
+GAME_FINISHED = False
 while play:
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
@@ -397,13 +401,13 @@ while play:
                 menu.switch(1)
             elif event.key == pygame.K_RETURN:
                 menu.select()
-        if not GAME_STARTED:
+        if not GAME_STARTED and not GAME_FINISHED:
             window.blit(imgBackground, (0, 0))
             menu.draw(window, 100)
     if not play:
         break 
-    if GAME_STARTED:
-        bot_move = get_bot_move([[e.rect.x, e.rect.y] for e in enemies], [[b.px, b.py] for b in bombs],  BLOCKS_LAYOUT, BLOCKS_CANT_BROKE_LAYOUT)
+    if GAME_STARTED and not GAME_FINISHED:
+        bot_move = get_bot_move([[e.rect.x, e.rect.y] for e in enemies.values()], [[b.px, b.py] for b in bombs],  BLOCKS_LAYOUT, BLOCKS_CANT_BROKE_LAYOUT)
         for bomb in bombs:
             bomb.update()
         for obj in objects:
