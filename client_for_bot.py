@@ -1,5 +1,5 @@
 import pygame
-from bot_example import get_bot_move
+from my_bot import get_bot_move, set_first_params
 import socket
 from pickle import loads, dumps
 from time import time
@@ -105,7 +105,6 @@ class UI:
                 i += 1
 
         seconds = max(0, 180 - int(time() - time_started))
-
 
         if len(tanksAlive) == 1 or seconds <= 0:
             GAME_FINISHED = True
@@ -358,6 +357,7 @@ def game_play_pressed():
                     color = value
                 elif key == 'your_position':
                     pos = value
+                    set_first_params(pos[0], pos[1], TILE, WIDTH)
                 elif key == 'all_players_colors':
                     enemies_colors = value
                 elif key == 'all_players_positions':
