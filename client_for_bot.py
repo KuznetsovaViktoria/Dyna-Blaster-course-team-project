@@ -2,7 +2,7 @@ import pygame
 from my_bot import get_bot_move, set_first_params
 import socket
 from pickle import loads, dumps
-from time import time
+from time import time, sleep
 
 sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 sock.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
@@ -22,6 +22,7 @@ window = pygame.display.set_mode((WIDTH, HEIGHT))
 
 fontUI = pygame.font.Font(None, 35)
 endgameFontUI = pygame.font.Font(None, 50)
+timeFontUI = pygame.font.Font(None, 100)
 
 imgBrick = pygame.transform.scale(pygame.image.load('images/block_brick.png'), (TILE, TILE))
 imgBackground = pygame.transform.scale(pygame.image.load('images/background.png'), (WIDTH, HEIGHT))
@@ -345,6 +346,14 @@ def game_play_pressed():
         data = loads(sock.recv(1024))
         sock.settimeout(0.5)
         if len(data) > 0 and len(data[0]) > 0 and data[0][1] == 'start':
+            for t in range(3):
+                window.blit(imgBackground, (0, 0))
+                timeText = timeFontUI.render(f'{3 - t}', 1, 'purple')
+                timeRect = timeText.get_rect(centerx=WIDTH//2, centery=HEIGHT//2)
+                window.blit(timeText, timeRect)
+                pygame.display.update()
+                sleep(1)
+
             GAME_STARTED = True
             for [key, value] in data[1:]:
                 if key == 'all_players_names':
