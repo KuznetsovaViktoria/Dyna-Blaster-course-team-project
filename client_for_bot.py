@@ -416,7 +416,7 @@ while play:
     if not play:
         break 
     if GAME_STARTED and not GAME_FINISHED:
-        bot_move = get_bot_move([[e.rect.x, e.rect.y] for e in enemies.values()], [[b.px, b.py] for b in bombs],  BLOCKS_LAYOUT, BLOCKS_CANT_BROKE_LAYOUT)
+        bot_move = get_bot_move([[e.rect.x, e.rect.y] for e in enemies.values()], [e.points for e in enemies.values()], [[b.px, b.py] for b in bombs],  BLOCKS_LAYOUT, BLOCKS_CANT_BROKE_LAYOUT)
         for bomb in bombs:
             bomb.update()
         for obj in objects:
