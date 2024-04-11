@@ -11,6 +11,9 @@ def set_first_params(x, y, t, w):
     TILE = t
     WIDTH = w
 
+def is_correct_coords(x, y):
+    return 0 <= x <= WIDTH - TILE and 0 < y <= WIDTH
+
 
 def get_bot_move(enemies_positions, bombs_positions,  blocks_layout, stones_layout):
     x = randint(0, 3)
