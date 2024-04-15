@@ -87,9 +87,11 @@ class UI:
         global GAME_FINISHED
         i = 0
         tanksAlive = []
+        tanks = []
         pygame.draw.rect(window, 'white', (0, 0, WIDTH, TILE))
         for obj in objects:
             if obj.type == 'tank':
+                tanks.append(obj)
                 if obj.hp > 0:
                     tanksAlive.append(obj)
 
@@ -107,11 +109,12 @@ class UI:
         seconds = max(0, 180 - int(time() - time_started))
 
 
-        if len(tanksAlive) == 1 or seconds <= 0:
+        if len(tanksAlive) <= 1 or seconds <= 0:
+            possible_winners = tanks if len(tanksAlive) == 0 else tanksAlive
             GAME_FINISHED = True
             window.blit(imgBackground, (0, 0))
-            winnerPoints = max(tanksAlive, key=lambda tank: tank.points).points
-            winners = [tank.color for tank in tanksAlive if tank.points == winnerPoints]
+            winnerPoints = max(possible_winners, key=lambda tank: tank.points).points
+            winners = [tank.color for tank in possible_winners if tank.points == winnerPoints]
             color = 'purple' if len(winners) > 1 else winners[0]
             winnersText = 'Draw!' if len(winners) > 1 else f'{winners[0]} wins'
             gameOverText = endgameFontUI.render(f'Game over', 1, color)

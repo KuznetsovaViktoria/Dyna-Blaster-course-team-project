@@ -1,5 +1,5 @@
 import pygame
-from my_bot import get_bot_move, set_first_params
+from bot_example import get_bot_move, set_first_params
 import socket
 from pickle import loads, dumps
 from time import time, sleep
@@ -88,9 +88,11 @@ class UI:
         global GAME_FINISHED
         i = 0
         tanksAlive = []
+        tanks = []
         pygame.draw.rect(window, 'white', (0, 0, WIDTH, TILE))
         for obj in objects:
             if obj.type == 'tank':
+                tanks.append(obj)
                 if obj.hp > 0:
                     tanksAlive.append(obj)
 
@@ -107,11 +109,11 @@ class UI:
 
         seconds = max(0, 180 - int(time() - time_started))
 
-        if len(tanksAlive) == 1 or seconds <= 0:
-            GAME_FINISHED = True
+        if len(tanksAlive) <= 1 or seconds <= 0:
+            possible_winners = tanks if len(tanksAlive) == 0 else tanksAlive
             window.blit(imgBackground, (0, 0))
-            winnerPoints = max(tanksAlive, key=lambda tank: tank.points).points
-            winners = [tank.color for tank in tanksAlive if tank.points == winnerPoints]
+            winnerPoints = max(possible_winners, key=lambda tank: tank.points).points
+            winners = [tank.color for tank in possible_winners if tank.points == winnerPoints]
             color = 'purple' if len(winners) > 1 else winners[0]
             winnersText = 'Draw!' if len(winners) > 1 else f'{winners[0]} wins'
             gameOverText = endgameFontUI.render(f'Game over', 1, color)
@@ -154,7 +156,7 @@ class MyTank:
         self.points = 0
         self.bombs_to_send = []
 
-    def update(self, key_pressed):
+    def update(self, key_pressed = None):
         if self.hp <= 0:
             return
 
@@ -384,9 +386,9 @@ def game_play_pressed():
 
 
 menu = Menu()
-menu.append_option('Welcome to the best game ever!', lambda: print('Welcome'), 'brown')
+menu.append_option('Waiting for player', lambda: print('Welcome'), 'brown')
 menu.append_option('Play', lambda: game_play_pressed())
-menu.append_option('Quit', lambda: pygame.quit())
+# menu.append_option('Quit', lambda: pygame.quit())
 
 bombs = []
 objects = []
@@ -398,17 +400,24 @@ enemies = {}
 errors = 0
 clock = pygame.time.Clock()
 GAME_FINISHED = False
+start_game_pressed = False
 while play:
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             play = False
             break
-        elif not GAME_STARTED and event.type == pygame.KEYDOWN:
-            if event.key == pygame.K_UP:
-                menu.switch(-1)
-            elif event.key == pygame.K_DOWN:
-                menu.switch(1)
-            elif event.key == pygame.K_RETURN:
+        elif not GAME_STARTED:
+            # if event.key == pygame.K_UP:
+            #     menu.switch(-1)
+            # elif event.key == pygame.K_DOWN:
+            #     menu.switch(1)
+            # elif event.key == pygame.K_RETURN:
+            #     menu.select()
+            if not start_game_pressed:
+                window.blit(imgBackground, (0, 0))
+                menu.draw(window, 100)
+                start_game_pressed = True
+            else:
                 menu.select()
         if not GAME_STARTED and not GAME_FINISHED:
             window.blit(imgBackground, (0, 0))
@@ -416,7 +425,7 @@ while play:
     if not play:
         break 
     if GAME_STARTED and not GAME_FINISHED:
-        bot_move = get_bot_move([[e.rect.x, e.rect.y] for e in enemies.values()], [e.points for e in enemies.values()], [[b.px, b.py] for b in bombs],  BLOCKS_LAYOUT, BLOCKS_CANT_BROKE_LAYOUT)
+        bot_move = get_bot_move([my_tank.rect.x, my_tank.rect.y - TILE], [[e.rect.x, e.rect.y - TILE] for e in enemies.values()], [e.points for e in enemies.values()], [[b.px, b.py - TILE] for b in bombs],  [[x, y - TILE] for (x, y) in BLOCKS_LAYOUT], [[x, y - TILE] for (x, y) in BLOCKS_CANT_BROKE_LAYOUT])
         for bomb in bombs:
             bomb.update()
         for obj in objects:
