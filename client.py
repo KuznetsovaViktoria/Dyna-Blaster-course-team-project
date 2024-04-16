@@ -29,8 +29,8 @@ imgBlockCantBroke = pygame.transform.scale(pygame.image.load('images/blockcantbr
 imgGrass = pygame.transform.scale(pygame.image.load('images/grass.png'), (TILE, TILE))
 imgBomb = pygame.transform.scale(pygame.image.load('images/bomb.png'), (TILE, TILE))
 imgTanks = {
-    'red': pygame.transform.scale(pygame.image.load('images/player_red.png'), (TILE * 8 // 10, TILE * 8 // 10)),
-    'blue': pygame.transform.scale(pygame.image.load('images/player_blue.png'), (TILE * 8 // 10, TILE * 8 // 10)),
+    'red': pygame.transform.scale(pygame.image.load('images/player_red.png'), (TILE, TILE)),
+    'blue': pygame.transform.scale(pygame.image.load('images/player_blue.png'), (TILE, TILE)),
 }
 imgBangs = [
     pygame.transform.scale(pygame.image.load('images/bang1.png'), (TILE, TILE)),
@@ -87,31 +87,22 @@ class UI:
         global GAME_FINISHED
         i = 0
         tanksAlive = []
-        pygame.draw.rect(window, 'white', (0, 0, WIDTH, TILE))
+        tanks = []
         for obj in objects:
             if obj.type == 'tank':
+                tanks.append(obj)
                 if obj.hp > 0:
                     tanksAlive.append(obj)
-
-                text = fontUI.render(f'health: {obj.hp} - points: {obj.points}', 1, obj.color)
-                if i == 0:
-                    rect = text.get_rect(left=8, centery=TILE // 2)
-                elif i == 1:
-                    rect = text.get_rect(right=WIDTH - 8, centery=TILE // 2)
-                else:
-                    rect = text.get_rect()
-
-                window.blit(text, rect)
-                i += 1
 
         seconds = max(0, 180 - int(time() - time_started))
 
 
-        if len(tanksAlive) == 1 or seconds <= 0:
+        if len(tanksAlive) <= 1 or seconds <= 0:
+            possible_winners = tanks if len(tanksAlive) == 0 else tanksAlive
             GAME_FINISHED = True
             window.blit(imgBackground, (0, 0))
-            winnerPoints = max(tanksAlive, key=lambda tank: tank.points).points
-            winners = [tank.color for tank in tanksAlive if tank.points == winnerPoints]
+            winnerPoints = max(possible_winners, key=lambda tank: tank.points).points
+            winners = [tank.color for tank in possible_winners if tank.points == winnerPoints]
             color = 'purple' if len(winners) > 1 else winners[0]
             winnersText = 'Draw!' if len(winners) > 1 else f'{winners[0]} wins'
             gameOverText = endgameFontUI.render(f'Game over', 1, color)
@@ -122,6 +113,19 @@ class UI:
             window.blit(winnerText, winnerRect)
         else:
             self.seconds = seconds
+        pygame.draw.rect(window, 'white', (0, 0, WIDTH, TILE))
+        for obj in objects:
+            if obj.type == 'tank':
+                text = fontUI.render(f'health: {obj.hp} - points: {obj.points}', 1, obj.color)
+                if i == 0:
+                    rect = text.get_rect(left=8, centery=TILE // 2)
+                elif i == 1:
+                    rect = text.get_rect(right=WIDTH - 8, centery=TILE // 2)
+                else:
+                    rect = text.get_rect()
+
+                window.blit(text, rect)
+                i += 1
         timerText = fontUI.render(f'{self.seconds // 60}:{(self.seconds % 60):02d}', 1, 'black')
         timerRect = timerText.get_rect(centerx=WIDTH // 2, centery=TILE // 2)
         window.blit(timerText, timerRect)
@@ -134,7 +138,7 @@ class MyTank:
         self.server_name = ''
 
         self.color = color
-        self.rect = pygame.Rect(px, py, TILE - 5, TILE - 5)
+        self.rect = pygame.Rect(px, py, TILE, TILE)
         self.direct = direct
         self.moveSpeed = TILE
         self.hp = 1
@@ -177,6 +181,7 @@ class MyTank:
                 self.rect.topleft = oldX, oldY
 
         if keys[self.keySHOT] and self.shotTimer == 0:
+            print(self.rect.centerx, self.rect.centery)
             Bomb(self, self.rect.centerx, self.rect.centery)
             self.shotTimer = self.shotDelay
             self.bombs_to_send.append([self.rect.centerx, self.rect.centery])

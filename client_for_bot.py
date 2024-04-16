@@ -1,5 +1,5 @@
 import pygame
-from my_bot import get_bot_move, set_first_params
+from bot_example import get_bot_move, set_first_params
 import socket
 from pickle import loads, dumps
 from time import time, sleep
@@ -30,8 +30,8 @@ imgBlockCantBroke = pygame.transform.scale(pygame.image.load('images/blockcantbr
 imgGrass = pygame.transform.scale(pygame.image.load('images/grass.png'), (TILE, TILE))
 imgBomb = pygame.transform.scale(pygame.image.load('images/bomb.png'), (TILE, TILE))
 imgTanks = {
-    'red': pygame.transform.scale(pygame.image.load('images/player_red.png'), (TILE * 8 // 10, TILE * 8 // 10)),
-    'blue': pygame.transform.scale(pygame.image.load('images/player_blue.png'), (TILE * 8 // 10, TILE * 8 // 10)),
+    'red': pygame.transform.scale(pygame.image.load('images/player_red.png'), (TILE, TILE)),
+    'blue': pygame.transform.scale(pygame.image.load('images/player_blue.png'), (TILE, TILE)),
 }
 imgBangs = [
     pygame.transform.scale(pygame.image.load('images/bang1.png'), (TILE, TILE)),
@@ -88,30 +88,21 @@ class UI:
         global GAME_FINISHED
         i = 0
         tanksAlive = []
-        pygame.draw.rect(window, 'white', (0, 0, WIDTH, TILE))
+        tanks = []
         for obj in objects:
             if obj.type == 'tank':
+                tanks.append(obj)
                 if obj.hp > 0:
                     tanksAlive.append(obj)
 
-                text = fontUI.render(f'health: {obj.hp} - points: {obj.points}', 1, obj.color)
-                if i == 0:
-                    rect = text.get_rect(left=8, centery=TILE // 2)
-                elif i == 1:
-                    rect = text.get_rect(right=WIDTH - 8, centery=TILE // 2)
-                else:
-                    rect = text.get_rect()
-
-                window.blit(text, rect)
-                i += 1
-
         seconds = max(0, 180 - int(time() - time_started))
 
-        if len(tanksAlive) == 1 or seconds <= 0:
+        if len(tanksAlive) <= 1 or seconds <= 0:
+            possible_winners = tanks if len(tanksAlive) == 0 else tanksAlive
             GAME_FINISHED = True
             window.blit(imgBackground, (0, 0))
-            winnerPoints = max(tanksAlive, key=lambda tank: tank.points).points
-            winners = [tank.color for tank in tanksAlive if tank.points == winnerPoints]
+            winnerPoints = max(possible_winners, key=lambda tank: tank.points).points
+            winners = [tank.color for tank in possible_winners if tank.points == winnerPoints]
             color = 'purple' if len(winners) > 1 else winners[0]
             winnersText = 'Draw!' if len(winners) > 1 else f'{winners[0]} wins'
             gameOverText = endgameFontUI.render(f'Game over', 1, color)
@@ -122,6 +113,19 @@ class UI:
             window.blit(winnerText, winnerRect)
         else:
             self.seconds = seconds
+        pygame.draw.rect(window, 'white', (0, 0, WIDTH, TILE))
+        for obj in objects:
+            if obj.type == 'tank':
+                text = fontUI.render(f'health: {obj.hp} - points: {obj.points}', 1, obj.color)
+                if i == 0:
+                    rect = text.get_rect(left=8, centery=TILE // 2)
+                elif i == 1:
+                    rect = text.get_rect(right=WIDTH - 8, centery=TILE // 2)
+                else:
+                    rect = text.get_rect()
+
+                window.blit(text, rect)
+                i += 1
         timerText = fontUI.render(f'{self.seconds // 60}:{(self.seconds % 60):02d}', 1, 'black')
         timerRect = timerText.get_rect(centerx=WIDTH // 2, centery=TILE // 2)
         window.blit(timerText, timerRect)
@@ -134,7 +138,7 @@ class MyTank:
         self.server_name = ''
 
         self.color = color
-        self.rect = pygame.Rect(px, py, TILE - 5, TILE - 5)
+        self.rect = pygame.Rect(px, py, TILE, TILE)
         self.direct = direct
         self.moveSpeed = TILE
         self.hp = 1
@@ -154,7 +158,7 @@ class MyTank:
         self.points = 0
         self.bombs_to_send = []
 
-    def update(self, key_pressed):
+    def update(self, key_pressed = None):
         if self.hp <= 0:
             return
 
@@ -384,9 +388,9 @@ def game_play_pressed():
 
 
 menu = Menu()
-menu.append_option('Welcome to the best game ever!', lambda: print('Welcome'), 'brown')
+menu.append_option('Waiting for player', lambda: print('Welcome'), 'brown')
 menu.append_option('Play', lambda: game_play_pressed())
-menu.append_option('Quit', lambda: pygame.quit())
+# menu.append_option('Quit', lambda: pygame.quit())
 
 bombs = []
 objects = []
@@ -398,17 +402,24 @@ enemies = {}
 errors = 0
 clock = pygame.time.Clock()
 GAME_FINISHED = False
+start_game_pressed = False
 while play:
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             play = False
             break
-        elif not GAME_STARTED and event.type == pygame.KEYDOWN:
-            if event.key == pygame.K_UP:
-                menu.switch(-1)
-            elif event.key == pygame.K_DOWN:
-                menu.switch(1)
-            elif event.key == pygame.K_RETURN:
+        elif not GAME_STARTED:
+            # if event.key == pygame.K_UP:
+            #     menu.switch(-1)
+            # elif event.key == pygame.K_DOWN:
+            #     menu.switch(1)
+            # elif event.key == pygame.K_RETURN:
+            #     menu.select()
+            if not start_game_pressed:
+                window.blit(imgBackground, (0, 0))
+                menu.draw(window, 100)
+                start_game_pressed = True
+            else:
                 menu.select()
         if not GAME_STARTED and not GAME_FINISHED:
             window.blit(imgBackground, (0, 0))
@@ -416,7 +427,7 @@ while play:
     if not play:
         break 
     if GAME_STARTED and not GAME_FINISHED:
-        bot_move = get_bot_move([[e.rect.x, e.rect.y] for e in enemies.values()], [e.points for e in enemies.values()], [[b.px, b.py] for b in bombs],  BLOCKS_LAYOUT, BLOCKS_CANT_BROKE_LAYOUT)
+        bot_move = get_bot_move((my_tank.rect.x, my_tank.rect.y - TILE), [(e.rect.x, e.rect.y - TILE) for e in enemies.values()], [e.points for e in enemies.values()], [(b.px - TILE // 2, b.py - TILE - TILE // 2) for b in bombs],  [(x, y - TILE) for (x, y) in BLOCKS_LAYOUT], [(x, y - TILE) for (x, y) in BLOCKS_CANT_BROKE_LAYOUT])
         for bomb in bombs:
             bomb.update()
         for obj in objects:
