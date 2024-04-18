@@ -1,12 +1,12 @@
 import pygame
-from bot_example import get_bot_move, set_first_params
+from my_bot import get_bot_move, set_first_params
 import socket
 from pickle import loads, dumps
 from time import time, sleep
 
 sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 sock.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
-HOST = '127.0.0.1'  # localhost
+HOST = '192.168.1.72'  # localhost
 PORT = 1093 # any above 1023
 
 pygame.init()
@@ -63,7 +63,8 @@ class Menu:
         self.callbacks.append(callback)
 
     def switch(self, direction):
-        self.currentOptionInd = max(1, min(self.currentOptionInd + direction, len(self.menuOptions) - 1))
+        pass
+        # self.currentOptionInd = max(1, min(self.currentOptionInd + direction, len(self.menuOptions) - 1))
     def select(self):
         self.callbacks[self.currentOptionInd]()
 
@@ -347,7 +348,7 @@ def game_play_pressed():
     name, color, pos = 0, 0, 0
     enemies_colors, enemies_positions = [], []
     while True:
-        data = loads(sock.recv(1024))
+        data = loads(sock.recv(4096))
         sock.settimeout(0.5)
         if len(data) > 0 and len(data[0]) > 0 and data[0][1] == 'start':
             for t in range(3):
@@ -368,9 +369,10 @@ def game_play_pressed():
                     name = value
                 elif key == 'your_color':
                     color = value
+                    print("i'm", color)
                 elif key == 'your_position':
                     pos = value
-                    set_first_params(pos[0], pos[1], TILE, WIDTH)
+                    set_first_params(pos[0], pos[1] - TILE, TILE, WIDTH)
                 elif key == 'all_players_colors':
                     enemies_colors = value
                 elif key == 'all_players_positions':
@@ -390,7 +392,7 @@ def game_play_pressed():
 menu = Menu()
 menu.append_option('Waiting for player', lambda: print('Welcome'), 'brown')
 menu.append_option('Play', lambda: game_play_pressed())
-# menu.append_option('Quit', lambda: pygame.quit())
+menu.append_option('Quit', lambda: pygame.quit())
 
 bombs = []
 objects = []
@@ -402,24 +404,17 @@ enemies = {}
 errors = 0
 clock = pygame.time.Clock()
 GAME_FINISHED = False
-start_game_pressed = False
 while play:
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             play = False
             break
-        elif not GAME_STARTED:
-            # if event.key == pygame.K_UP:
-            #     menu.switch(-1)
-            # elif event.key == pygame.K_DOWN:
-            #     menu.switch(1)
-            # elif event.key == pygame.K_RETURN:
-            #     menu.select()
-            if not start_game_pressed:
-                window.blit(imgBackground, (0, 0))
-                menu.draw(window, 100)
-                start_game_pressed = True
-            else:
+        elif not GAME_STARTED and event.type == pygame.KEYDOWN:
+            if event.key == pygame.K_UP:
+                menu.switch(-1)
+            elif event.key == pygame.K_DOWN:
+                menu.switch(1)
+            elif event.key == pygame.K_RETURN:
                 menu.select()
         if not GAME_STARTED and not GAME_FINISHED:
             window.blit(imgBackground, (0, 0))
