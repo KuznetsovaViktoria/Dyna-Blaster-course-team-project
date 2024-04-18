@@ -63,8 +63,7 @@ class Menu:
         self.callbacks.append(callback)
 
     def switch(self, direction):
-        pass
-        # self.currentOptionInd = max(1, min(self.currentOptionInd + direction, len(self.menuOptions) - 1))
+        self.currentOptionInd = max(1, min(self.currentOptionInd + direction, len(self.menuOptions) - 1))
     def select(self):
         self.callbacks[self.currentOptionInd]()
 
