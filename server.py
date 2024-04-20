@@ -1,5 +1,9 @@
 import socket
 import pickle
+TILE = 50
+WIDTH = 650
+POINTS_HEIGHT = 4 * TILE
+HEIGHT = WIDTH + POINTS_HEIGHT
 BLOCKS = []
 BLOCKS_CANT_BROKE = []
 def fieldToArray():
@@ -22,13 +26,10 @@ def fieldToArray():
     for i in range(13):
         for j in range(13):
             if FIELD[i][j] == "B":
-                BLOCKS_CANT_BROKE.append((j * 50, i* 50 + 50))
+                BLOCKS_CANT_BROKE.append((j * TILE, i* TILE + POINTS_HEIGHT))
             elif FIELD[i][j] == "W":
-                BLOCKS.append((j * 50, i* 50 + 50))
+                BLOCKS.append((j * TILE, i* TILE + POINTS_HEIGHT))
 
-TILE = 50
-WIDTH = 650
-HEIGHT = WIDTH + TILE
 fieldToArray()
 # BLOCKS = [
 #     (0, 100), (100, 100), (200, 100), (300, 100), (600, 100), (500, 100),
@@ -81,19 +82,20 @@ def end_game(msg):
 
 main_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 main_socket.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
-HOST = "192.168.1.72"  # localhost
+HOST = '127.0.0.1'  # localhost
+# HOST = '192.168.1.72'
 PORT = 1093 # any above 1023
 main_socket.bind((HOST, PORT))
 main_socket.setblocking(0)
-main_socket.listen(2)   #change anytime
-kExpectedPlayers = 2    #change anytime
+kExpectedPlayers = 4    #change anytime
+main_socket.listen(kExpectedPlayers)   #change anytime
 
 # making connection with players
 players = []
 names = []
 removed_players = []
-colors = ["red", "blue"]
-positions = [[0, TILE], [WIDTH - TILE, HEIGHT - TILE]]
+colors = ["red", "blue", "gray", "white", "pink", "black", "orange", "yellow"]
+positions = [[0, POINTS_HEIGHT], [WIDTH - TILE, HEIGHT - TILE], [WIDTH - TILE, POINTS_HEIGHT], [0, HEIGHT - TILE]]
 while True:
     try:  # connect players
         new_socket, addr = main_socket.accept()

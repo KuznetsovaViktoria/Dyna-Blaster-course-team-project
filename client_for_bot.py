@@ -6,14 +6,16 @@ from time import time, sleep
 
 sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 sock.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
-HOST = '192.168.1.72'  # localhost
+HOST = '127.0.0.1'  # localhost
+# HOST = '192.168.1.72'
 PORT = 1093 # any above 1023
 
 pygame.init()
 
 TILE = 50
 WIDTH = 650
-HEIGHT = WIDTH + TILE
+POINTS_HEIGHT = 4 * TILE
+HEIGHT = WIDTH + POINTS_HEIGHT
 FPS = 8
 GAME_STARTED = False
 time_started = 0
@@ -30,8 +32,14 @@ imgBlockCantBroke = pygame.transform.scale(pygame.image.load('images/blockcantbr
 imgGrass = pygame.transform.scale(pygame.image.load('images/grass.png'), (TILE, TILE))
 imgBomb = pygame.transform.scale(pygame.image.load('images/bomb.png'), (TILE, TILE))
 imgTanks = {
-    'red': pygame.transform.scale(pygame.image.load('images/player_red.png'), (TILE, TILE)),
-    'blue': pygame.transform.scale(pygame.image.load('images/player_blue.png'), (TILE, TILE)),
+    'red': pygame.transform.scale(pygame.image.load('images/bird_red.png'), (TILE, TILE)),
+    'blue': pygame.transform.scale(pygame.image.load('images/bird_blue.png'), (TILE, TILE)),
+    'black': pygame.transform.scale(pygame.image.load('images/bird_black.png'), (TILE, TILE)),
+    'yellow': pygame.transform.scale(pygame.image.load('images/bird_yellow.png'), (TILE, TILE)),
+    'gray': pygame.transform.scale(pygame.image.load('images/bird_gray.png'), (TILE, TILE)),
+    'orange': pygame.transform.scale(pygame.image.load('images/bird_orange.png'), (TILE, TILE)),
+    'pink': pygame.transform.scale(pygame.image.load('images/bird_pink.png'), (TILE, TILE)),
+    'white': pygame.transform.scale(pygame.image.load('images/bird_white.png'), (TILE, TILE)),
 }
 imgBangs = [
     pygame.transform.scale(pygame.image.load('images/bang1.png'), (TILE, TILE)),
@@ -113,7 +121,7 @@ class UI:
             window.blit(winnerText, winnerRect)
         else:
             self.seconds = seconds
-        pygame.draw.rect(window, 'white', (0, 0, WIDTH, TILE))
+        pygame.draw.rect(window, 'green', (0, 0, WIDTH, POINTS_HEIGHT))
         for obj in objects:
             if obj.type == 'tank':
                 text = fontUI.render(f'health: {obj.hp} - points: {obj.points}', 1, obj.color)
@@ -121,6 +129,10 @@ class UI:
                     rect = text.get_rect(left=8, centery=TILE // 2)
                 elif i == 1:
                     rect = text.get_rect(right=WIDTH - 8, centery=TILE // 2)
+                elif i == 2:
+                    rect = text.get_rect(left=8, centery=TILE // 2 + TILE)
+                elif i == 3:
+                    rect = text.get_rect(right=WIDTH - 8, centery=TILE // 2 + TILE)
                 else:
                     rect = text.get_rect()
 
@@ -177,7 +189,7 @@ class MyTank:
             self.rect.y = min(HEIGHT - TILE, self.rect.y + self.moveSpeed)
 
         for obj in objects:
-            if obj != self and obj.type in ['block', 'block_cant_broke'] and self.rect.colliderect(obj.rect):
+            if obj != self and obj.type in ['block', 'block_cant_broke', 'tank', 'bomb'] and self.rect.colliderect(obj.rect):
                 self.rect.topleft = oldX, oldY
 
         if key_pressed == self.keySHOT and self.shotTimer == 0:
@@ -250,25 +262,25 @@ class Bomb:
         self.timer -= 1
         if self.timer == 0:
             bombs.remove(self)
-            Bang(self.px, self.py)
-            Bang(self.px + TILE, self.py)
-            Bang(self.px - TILE, self.py)
-            Bang(self.px, self.py + TILE)
-            Bang(self.px, self.py - TILE)
-            for obj in objects:
-                if obj.type != 'bang' and obj.hp > 0 and (obj.rect.collidepoint(self.px, self.py) or
-                                           obj.rect.collidepoint(self.px + TILE, self.py) or
-                                           obj.rect.collidepoint(self.px - TILE, self.py) or
-                                           obj.rect.collidepoint(self.px, self.py + TILE) or
-                                           obj.rect.collidepoint(self.px, self.py - TILE)):
-                    if obj.type == 'block':
-                        self.parent.points += 1
-                    if obj.type == 'tank':
-                        if obj == self.parent:
-                            self.parent.points -= 5
-                        else:
-                            self.parent.points += 20
-                    obj.damage(self.damage)
+            Bang(self.px, self.py, self.parent)
+            Bang(self.px + TILE, self.py, self.parent)
+            Bang(self.px - TILE, self.py, self.parent)
+            Bang(self.px, self.py + TILE, self.parent)
+            Bang(self.px, self.py - TILE, self.parent)
+            # for obj in objects:
+            #     if obj.type != 'bang' and obj.hp > 0 and (obj.rect.collidepoint(self.px, self.py) or
+            #                                obj.rect.collidepoint(self.px + TILE, self.py) or
+            #                                obj.rect.collidepoint(self.px - TILE, self.py) or
+            #                                obj.rect.collidepoint(self.px, self.py + TILE) or
+            #                                obj.rect.collidepoint(self.px, self.py - TILE)):
+            #         if obj.type == 'block':
+            #             self.parent.points += 1
+            #         if obj.type == 'tank':
+            #             if obj == self.parent:
+            #                 self.parent.points -= 5
+            #             else:
+            #                 self.parent.points += 20
+            #         obj.damage(self.damage)
 
     def draw(self):
         image = imgBomb
@@ -277,10 +289,12 @@ class Bomb:
 
 
 class Bang:
-    def __init__(self, px, py):
+    def __init__(self, px, py, parent):
         objects.append(self)
         self.type = 'bang'
 
+        self.parent = parent
+        self.damage = 1
         self.px, self.py = px, py
         self.frame = 0
 
@@ -288,6 +302,17 @@ class Bang:
         self.frame += 0.6
         if self.frame >= 3:
             objects.remove(self)
+            return
+        for obj in objects:
+            if obj.type != 'bang' and obj.hp > 0 and obj.rect.collidepoint(self.px, self.py):
+                if obj.type == 'block':
+                    self.parent.points += 1
+                if obj.type == 'tank':
+                    if obj == self.parent:
+                        self.parent.points -= 5
+                    else:
+                        self.parent.points += 20
+                obj.damage(self.damage)
 
     def draw(self):
         image = imgBangs[int(self.frame)]
@@ -347,7 +372,7 @@ def game_play_pressed():
     name, color, pos = 0, 0, 0
     enemies_colors, enemies_positions = [], []
     while True:
-        data = loads(sock.recv(4096))
+        data = loads(sock.recv(4096 * 4))
         sock.settimeout(0.5)
         if len(data) > 0 and len(data[0]) > 0 and data[0][1] == 'start':
             for t in range(3):
@@ -421,7 +446,7 @@ while play:
     if not play:
         break 
     if GAME_STARTED and not GAME_FINISHED:
-        bot_move = get_bot_move((my_tank.rect.x, my_tank.rect.y - TILE), [(e.rect.x, e.rect.y - TILE) for e in enemies.values()], [e.points for e in enemies.values()], [(b.px - TILE // 2, b.py - TILE - TILE // 2) for b in bombs],  [(x, y - TILE) for (x, y) in BLOCKS_LAYOUT], [(x, y - TILE) for (x, y) in BLOCKS_CANT_BROKE_LAYOUT])
+        bot_move = get_bot_move((my_tank.rect.x, my_tank.rect.y - POINTS_HEIGHT), [(e.rect.x, e.rect.y - POINTS_HEIGHT) for e in enemies.values()], [e.points for e in enemies.values()], [(b.px - TILE // 2, b.py - POINTS_HEIGHT - TILE // 2) for b in bombs],  [(x, y - POINTS_HEIGHT) for (x, y) in BLOCKS_LAYOUT], [(x, y - POINTS_HEIGHT) for (x, y) in BLOCKS_CANT_BROKE_LAYOUT])
         for bomb in bombs:
             bomb.update()
         for obj in objects:
