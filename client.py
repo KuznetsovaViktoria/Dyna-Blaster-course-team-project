@@ -276,20 +276,6 @@ class Bomb:
             Bang(self.px - TILE, self.py, self.parent)
             Bang(self.px, self.py + TILE, self.parent)
             Bang(self.px, self.py - TILE, self.parent)
-            # for obj in objects:
-            #     if obj.type != 'bang' and obj.hp > 0 and (obj.rect.collidepoint(self.px, self.py) or
-            #                                obj.rect.collidepoint(self.px + TILE, self.py) or
-            #                                obj.rect.collidepoint(self.px - TILE, self.py) or
-            #                                obj.rect.collidepoint(self.px, self.py + TILE) or
-            #                                obj.rect.collidepoint(self.px, self.py - TILE)):
-            #         if obj.type == 'block':
-            #             self.parent.points += 1
-            #         if obj.type == 'tank':
-            #             if obj == self.parent:
-            #                 self.parent.points -= 5
-            #             else:
-            #                 self.parent.points += 20
-            #         obj.damage(self.damage)
 
     def draw(self):
         image = imgBomb
@@ -378,7 +364,7 @@ def game_play_pressed():
     name, color, pos = 0, 0, 0
     enemies_colors, enemies_positions = [], []
     while True:
-        data = loads(sock.recv(1024))
+        data = loads(sock.recv(1024 * 8))
         sock.settimeout(0.5)
         if len(data) > 0 and len(data[0]) > 0 and data[0][1] == 'start':
             for t in range(3):

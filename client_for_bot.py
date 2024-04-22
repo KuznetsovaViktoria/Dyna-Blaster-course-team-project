@@ -463,7 +463,7 @@ while play:
         except:
             errors +=1
         try:
-            data = loads(sock.recv(1024))
+            data = loads(sock.recv(1024 * 8))
             errors = 0
             if len(data) > 0 and len(data[0]) > 1:
                 for i in range(len(data[0][1])): 
