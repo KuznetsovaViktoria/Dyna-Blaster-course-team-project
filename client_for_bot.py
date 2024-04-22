@@ -3,6 +3,7 @@ from my_bot import get_bot_move, set_first_params
 import socket
 from pickle import loads, dumps
 from time import time, sleep
+from math import *
 
 sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 sock.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
@@ -16,48 +17,66 @@ TILE = 50
 WIDTH = 650
 POINTS_HEIGHT = 4 * TILE
 HEIGHT = WIDTH + POINTS_HEIGHT
+new_tile = 50
+new_width = 650
+new_points_height = POINTS_HEIGHT
+new_height = HEIGHT
+old_tile = 50
+old_width = 650
+old_points_height = POINTS_HEIGHT
+old_height = HEIGHT
 FPS = 8
 GAME_STARTED = False
 time_started = 0
 
-window = pygame.display.set_mode((WIDTH, HEIGHT))
+window = pygame.display.set_mode((WIDTH, HEIGHT), pygame.RESIZABLE)
 
 fontUI = pygame.font.Font(None, 35)
 endgameFontUI = pygame.font.Font(None, 50)
 timeFontUI = pygame.font.Font(None, 100)
 
-imgBrick = pygame.transform.scale(pygame.image.load('images/block_brick.png'), (TILE, TILE))
-imgBackground = pygame.transform.scale(pygame.image.load('images/background.png'), (WIDTH, HEIGHT))
-imgBlockCantBroke = pygame.transform.scale(pygame.image.load('images/blockcantbroke.png'), (TILE, TILE))
-imgGrass = pygame.transform.scale(pygame.image.load('images/grass.png'), (TILE, TILE))
-imgBomb = pygame.transform.scale(pygame.image.load('images/bomb.png'), (TILE, TILE))
-imgTanks = {
-    'red': pygame.transform.scale(pygame.image.load('images/bird_red.png'), (TILE, TILE)),
-    'blue': pygame.transform.scale(pygame.image.load('images/bird_blue.png'), (TILE, TILE)),
-    'black': pygame.transform.scale(pygame.image.load('images/bird_black.png'), (TILE, TILE)),
-    'yellow': pygame.transform.scale(pygame.image.load('images/bird_yellow.png'), (TILE, TILE)),
-    'gray': pygame.transform.scale(pygame.image.load('images/bird_gray.png'), (TILE, TILE)),
-    'orange': pygame.transform.scale(pygame.image.load('images/bird_orange.png'), (TILE, TILE)),
-    'pink': pygame.transform.scale(pygame.image.load('images/bird_pink.png'), (TILE, TILE)),
-    'white': pygame.transform.scale(pygame.image.load('images/bird_white.png'), (TILE, TILE)),
-}
-imgBangs = [
-    pygame.transform.scale(pygame.image.load('images/bang1.png'), (TILE, TILE)),
-    pygame.transform.scale(pygame.image.load('images/bang2.png'), (TILE, TILE)),
-    pygame.transform.scale(pygame.image.load('images/bang3.png'), (TILE, TILE)),
-]
+def resize_all_images():
+    global imgBackground, imgBangs, imgBlockCantBroke, imgBomb, imgBrick, imgGrass, imgTanks
+    imgBrick = pygame.transform.scale(pygame.image.load('images/block_brick.png'), (new_tile, new_tile))
+    imgBackground = pygame.transform.scale(pygame.image.load('images/background.png'), (new_width, new_height))
+    imgBlockCantBroke = pygame.transform.scale(pygame.image.load('images/blockcantbroke.png'), (new_tile, new_tile))
+    imgGrass = pygame.transform.scale(pygame.image.load('images/grass.png'), (new_tile, new_tile))
+    imgBomb = pygame.transform.scale(pygame.image.load('images/bomb.png'), (new_tile, new_tile))
+    imgTanks = {
+        'red': pygame.transform.scale(pygame.image.load('images/bird_red.png'), (new_tile, new_tile)),
+        'blue': pygame.transform.scale(pygame.image.load('images/bird_blue.png'), (new_tile, new_tile)),
+        'black': pygame.transform.scale(pygame.image.load('images/bird_black.png'), (new_tile, new_tile)),
+        'yellow': pygame.transform.scale(pygame.image.load('images/bird_yellow.png'), (new_tile, new_tile)),
+        'gray': pygame.transform.scale(pygame.image.load('images/bird_gray.png'), (new_tile, new_tile)),
+        'orange': pygame.transform.scale(pygame.image.load('images/bird_orange.png'), (new_tile, new_tile)),
+        'pink': pygame.transform.scale(pygame.image.load('images/bird_pink.png'), (new_tile, new_tile)),
+        'white': pygame.transform.scale(pygame.image.load('images/bird_white.png'), (new_tile, new_tile)),
+    }
+    imgBangs = [
+        pygame.transform.scale(pygame.image.load('images/bang1.png'), (new_tile, new_tile)),
+        pygame.transform.scale(pygame.image.load('images/bang2.png'), (new_tile, new_tile)),
+        pygame.transform.scale(pygame.image.load('images/bang3.png'), (new_tile, new_tile)),
+    ]
 
+def new_x_to_old_x(px):
+    px = floor(px * WIDTH / new_width / TILE) * TILE
+    return px
+
+def new_y_to_old_y(py):
+    py = floor(py * HEIGHT / new_height / TILE) * TILE
+    return py
 
 DIRECTS = [[0, -1], [1, 0], [0, 1], [-1, 0]]
 BLOCKS_LAYOUT = []
 BLOCKS_CANT_BROKE_LAYOUT = []
+resize_all_images()
 
 
 def make_grid():
     for (x, y) in BLOCKS_LAYOUT:
-        Block(x, y, TILE)
+        Block(x, y)
     for (x, y) in BLOCKS_CANT_BROKE_LAYOUT:
-        BlockCantBroke(x, y, TILE)
+        BlockCantBroke(x, y)
 
 class Menu:
     def __init__(self):
@@ -77,11 +96,9 @@ class Menu:
 
     def draw(self, surface, deltaY):
         for i, option in enumerate(self.menuOptions):
-            option_rect = option.get_rect(center=(WIDTH // 2, HEIGHT // 2 + i * deltaY - 75))
+            option_rect = option.get_rect(center=(new_width // 2, new_height // 2 + i * deltaY - 75))
             if i == self.currentOptionInd:
                 pygame.draw.rect(surface, 'white', option_rect)
-            # else:
-                # pygame.draw.rect(surface, 'black', option_rect)
             surface.blit(option, option_rect)
 
 class UI:
@@ -114,32 +131,40 @@ class UI:
             color = 'purple' if len(winners) > 1 else winners[0]
             winnersText = 'Draw!' if len(winners) > 1 else f'{winners[0]} wins'
             gameOverText = endgameFontUI.render(f'Game over', 1, color)
-            gameOverRect = gameOverText.get_rect(bottom=HEIGHT // 2, centerx=WIDTH // 2)
+            gameOverRect = gameOverText.get_rect(bottom=new_height // 2, centerx=new_width // 2)
             winnerText = endgameFontUI.render(winnersText, 1, color)
-            winnerRect = winnerText.get_rect(top=HEIGHT // 2, centerx=WIDTH // 2)
+            winnerRect = winnerText.get_rect(top=new_height // 2, centerx=new_width // 2)
             window.blit(gameOverText, gameOverRect)
             window.blit(winnerText, winnerRect)
         else:
             self.seconds = seconds
-        pygame.draw.rect(window, 'green', (0, 0, WIDTH, POINTS_HEIGHT))
+        pygame.draw.rect(window, 'green', (0, 0, new_width, new_points_height))
         for obj in objects:
             if obj.type == 'tank':
                 text = fontUI.render(f'health: {obj.hp} - points: {obj.points}', 1, obj.color)
                 if i == 0:
-                    rect = text.get_rect(left=8, centery=TILE // 2)
+                    rect = text.get_rect(left=8, centery=new_tile // 2 + 0 * new_tile)
                 elif i == 1:
-                    rect = text.get_rect(right=WIDTH - 8, centery=TILE // 2)
+                    rect = text.get_rect(right=new_width - 8, centery=new_tile // 2 + 0 * new_tile)
                 elif i == 2:
-                    rect = text.get_rect(left=8, centery=TILE // 2 + TILE)
+                    rect = text.get_rect(left=8, centery=new_tile // 2 + 1 * new_tile)
                 elif i == 3:
-                    rect = text.get_rect(right=WIDTH - 8, centery=TILE // 2 + TILE)
+                    rect = text.get_rect(right=new_width - 8, centery=new_tile // 2 + 1 * new_tile)
+                elif i == 4:
+                    rect = text.get_rect(left=8, centery=new_tile // 2 + 2 * new_tile)
+                elif i == 5:
+                    rect = text.get_rect(right=new_width - 8, centery=new_tile // 2 + 2 * new_tile)
+                elif i == 6:
+                    rect = text.get_rect(left=8, centery=new_tile // 2 + 3 * new_tile)
+                elif i == 7:
+                    rect = text.get_rect(right=new_width - 8, centery=new_tile // 2 + 3 * new_tile)
                 else:
                     rect = text.get_rect()
 
                 window.blit(text, rect)
                 i += 1
         timerText = fontUI.render(f'{self.seconds // 60}:{(self.seconds % 60):02d}', 1, 'black')
-        timerRect = timerText.get_rect(centerx=WIDTH // 2, centery=TILE // 2)
+        timerRect = timerText.get_rect(centerx=new_width // 2, centery=new_tile // 2)
         window.blit(timerText, timerRect)
 
 
@@ -150,9 +175,11 @@ class MyTank:
         self.server_name = ''
 
         self.color = color
-        self.rect = pygame.Rect(px, py, TILE, TILE)
+        px = min(new_width - new_tile, max(0, floor(px * new_width / WIDTH / new_tile) * new_tile))
+        py = min(new_height - new_tile, max(new_points_height, floor(py * new_height / HEIGHT / new_tile) * new_tile))
+        self.rect = pygame.Rect(px, py, new_tile, new_tile)
         self.direct = direct
-        self.moveSpeed = TILE
+        self.moveSpeed = new_tile
         self.hp = 1
 
         self.shotTimer = 0
@@ -171,6 +198,14 @@ class MyTank:
         self.bombs_to_send = []
 
     def update(self, key_pressed = None):
+        if RESIZE_FLAG:
+            self.rect.width = new_tile
+            self.rect.height = new_tile
+            self.moveSpeed = new_tile
+            self.rect.left = floor(self.rect.left * new_width / old_width / new_tile) * new_tile
+            self.rect.top = floor(self.rect.top * new_height / old_height  / new_tile) * new_tile
+            self.image = imgTanks[self.color]
+            self.rect = self.image.get_rect(center=self.rect.center)
         if self.hp <= 0:
             return
 
@@ -181,12 +216,12 @@ class MyTank:
             self.rect.x = max(0, self.rect.x - self.moveSpeed)
             self.direct = 0
         elif key_pressed == self.keyRIGHT:
-            self.rect.x = min(WIDTH - TILE, self.rect.x + self.moveSpeed)
+            self.rect.x = min(new_width - new_tile, self.rect.x + self.moveSpeed)
             self.direct = 1
         elif key_pressed == self.keyUP:
-            self.rect.y = max(TILE, self.rect.y - self.moveSpeed)
+            self.rect.y = max(new_points_height, self.rect.y - self.moveSpeed)
         elif key_pressed == self.keyDOWN:
-            self.rect.y = min(HEIGHT - TILE, self.rect.y + self.moveSpeed)
+            self.rect.y = min(new_height - new_tile, self.rect.y + self.moveSpeed)
 
         for obj in objects:
             if obj != self and obj.type in ['block', 'block_cant_broke', 'tank', 'bomb'] and self.rect.colliderect(obj.rect):
@@ -195,8 +230,8 @@ class MyTank:
         if key_pressed == self.keySHOT and self.shotTimer == 0:
             Bomb(self, self.rect.centerx, self.rect.centery)
             self.shotTimer = self.shotDelay
-            self.bombs_to_send.append([self.rect.centerx, self.rect.centery])
-
+            # self.bombs_to_send.append([floor(self.rect.x * WIDTH / new_width / TILE) * TILE + TILE//2, floor(self.rect.y * HEIGHT / new_height / TILE) * TILE + TILE//2])
+            self.bombs_to_send.append([floor(self.rect.x * WIDTH / new_width) + TILE//2, floor(self.rect.y * HEIGHT / new_height) + TILE//2])
         if self.shotTimer > 0:
             self.shotTimer -= 1
 
@@ -210,17 +245,17 @@ class MyTank:
             print(self.color, 'dead')
 
     def get_data(self):
-        return [['name', self.server_name], ['pos' , [self.rect.x, self.rect.y]], ['hp', self.hp], ['bombs', self.bombs_to_send]]
+        return [['name', self.server_name], ['pos' , [floor(self.rect.x * WIDTH / new_width), floor(self.rect.y * HEIGHT / new_height)]], ['hp', self.hp], ['bombs', self.bombs_to_send]]
 
 class EnemyTank:
     def __init__(self, server_name, pos, color, direct):
         self.server_name = server_name
         objects.append(self)
         self.type = 'tank'
-        self.px = pos[0]
-        self.py = pos[1]
+        px = min(new_width, max(0, floor(pos[0] * new_width / WIDTH / new_tile) * new_tile))
+        py = min(new_height - new_tile, max(new_points_height, floor(pos[1] * new_height / HEIGHT / new_tile) * new_tile))
         self.color = color
-        self.rect = pygame.Rect(pos[0], pos[1], TILE, TILE)
+        self.rect = pygame.Rect(px, py, new_tile, new_tile)
         self.hp = 1
 
         self.image = imgTanks[self.color]
@@ -229,12 +264,16 @@ class EnemyTank:
         self.points = 0
 
     def update_position(self, pos): #[x, y]
+        self.rect.width = new_tile
+        self.rect.height = new_tile
         if self.hp <= 0:
             return
 
         self.rect = self.image.get_rect(center=self.rect.center)
-        self.rect.x = pos[0]
-        self.rect.y = pos[1]
+        self.rect.x = floor(pos[0] * new_width / WIDTH / new_tile) * new_tile
+        self.rect.y = floor(pos[1] * new_height / HEIGHT / new_tile) * new_tile
+        self.image = imgTanks[self.color]
+        self.rect = self.image.get_rect(center=self.rect.center)
 
     def update(self, key):
         pass
@@ -263,10 +302,10 @@ class Bomb:
         if self.timer == 0:
             bombs.remove(self)
             Bang(self.px, self.py, self.parent)
-            Bang(self.px + TILE, self.py, self.parent)
-            Bang(self.px - TILE, self.py, self.parent)
-            Bang(self.px, self.py + TILE, self.parent)
-            Bang(self.px, self.py - TILE, self.parent)
+            Bang(self.px + new_tile, self.py, self.parent)
+            Bang(self.px - new_tile, self.py, self.parent)
+            Bang(self.px, self.py + new_tile, self.parent)
+            Bang(self.px, self.py - new_tile, self.parent)
 
     def draw(self):
         image = imgBomb
@@ -306,15 +345,20 @@ class Bang:
         window.blit(image, rect)
 
 class Block:
-    def __init__(self, px, py, size):
+    def __init__(self, px, py):
         objects.append(self)
         self.type = 'block'
-
-        self.rect = pygame.Rect(px, py, size, size)
+        px = floor(px * new_width / old_width / new_tile) * new_tile
+        py = floor(py * new_height / old_height / new_tile) * new_tile
+        self.rect = pygame.Rect(px, py, new_tile, new_tile)
         self.hp = 1
 
     def update(self):
-        pass
+        if RESIZE_FLAG:
+            self.rect.x = floor(self.rect.x * new_width / old_width / new_tile) * new_tile
+            self.rect.y = floor(self.rect.y  * new_height / old_height / new_tile) * new_tile
+            self.rect.width = new_tile
+            self.rect.height = new_tile
 
     def draw(self):
         window.blit(imgBrick, self.rect)
@@ -324,23 +368,28 @@ class Block:
         self.hp -= value
         if self.hp <= 0:
             objects.remove(self)
-            if (self.rect.x, self.rect.y) in BLOCKS_LAYOUT:
-                BLOCKS_LAYOUT.remove((self.rect.x, self.rect.y))
+            if (new_x_to_old_x(self.rect.x), new_y_to_old_y(self.rect.y)) in BLOCKS_LAYOUT:
+                BLOCKS_LAYOUT.remove((new_x_to_old_x(self.rect.x), new_y_to_old_y(self.rect.y)))
 
     def get_data(self):
         return ['block']
 
 
 class BlockCantBroke:
-    def __init__(self, px, py, size):
+    def __init__(self, px, py):
         objects.append(self)
         self.type = 'block_cant_broke'
-
-        self.rect = pygame.Rect(px, py, size, size)
+        px = floor(px * new_width / old_width / new_tile) * new_tile
+        py = floor(py  * new_height / old_height / new_tile) * new_tile
+        self.rect = pygame.Rect(px, py, new_tile, new_tile)
         self.hp = 1
 
     def update(self):
-        pass
+        if RESIZE_FLAG:
+            self.rect.x = floor(self.rect.x * new_width / old_width / new_tile) * new_tile
+            self.rect.y = floor(self.rect.y  * new_height / old_height / new_tile) * new_tile
+            self.rect.width = new_tile
+            self.rect.height = new_tile
 
     def draw(self):
         window.blit(imgBlockCantBroke, self.rect)
@@ -364,7 +413,7 @@ def game_play_pressed():
             for t in range(3):
                 window.blit(imgBackground, (0, 0))
                 timeText = timeFontUI.render(f'{3 - t}', 1, 'purple')
-                timeRect = timeText.get_rect(centerx=WIDTH//2, centery=HEIGHT//2)
+                timeRect = timeText.get_rect(centerx=new_width//2, centery=new_height//2)
                 window.blit(timeText, timeRect)
                 pygame.display.update()
                 sleep(1)
@@ -414,11 +463,24 @@ enemies = {}
 errors = 0
 clock = pygame.time.Clock()
 GAME_FINISHED = False
+RESIZE_FLAG = False
 while play:
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             play = False
             break
+        if event.type == pygame.VIDEORESIZE:
+            old_height = new_height
+            old_width = new_width
+            old_tile = new_tile
+            old_points_height = new_points_height
+            new_width = event.w - event.w % 13
+            new_tile = new_width // 13
+            new_points_height = 4 * new_tile
+            new_height = new_width + new_points_height
+            window = pygame.display.set_mode((new_width, new_height), pygame.RESIZABLE)
+            RESIZE_FLAG = True
+            resize_all_images()
         elif not GAME_STARTED and event.type == pygame.KEYDOWN:
             if event.key == pygame.K_UP:
                 menu.switch(-1)
@@ -432,7 +494,12 @@ while play:
     if not play:
         break 
     if GAME_STARTED and not GAME_FINISHED:
-        bot_move = get_bot_move((my_tank.rect.x, my_tank.rect.y - POINTS_HEIGHT), [(e.rect.x, e.rect.y - POINTS_HEIGHT) for e in enemies.values()], [e.points for e in enemies.values()], [(b.px - TILE // 2, b.py - POINTS_HEIGHT - TILE // 2) for b in bombs],  [(x, y - POINTS_HEIGHT) for (x, y) in BLOCKS_LAYOUT], [(x, y - POINTS_HEIGHT) for (x, y) in BLOCKS_CANT_BROKE_LAYOUT])
+        bot_move = get_bot_move((new_x_to_old_x(my_tank.rect.x), new_y_to_old_y(my_tank.rect.y) - POINTS_HEIGHT), 
+                                [(new_x_to_old_x(e.rect.x), new_y_to_old_y(e.rect.y) - POINTS_HEIGHT) for e in enemies.values()], 
+                                [e.points for e in enemies.values()], 
+                                [(new_x_to_old_x(b.px) - TILE // 2, new_y_to_old_y(b.py) - POINTS_HEIGHT - TILE // 2) for b in bombs], 
+                                [(x, y - POINTS_HEIGHT) for (x, y) in BLOCKS_LAYOUT], 
+                                [(x, y - POINTS_HEIGHT) for (x, y) in BLOCKS_CANT_BROKE_LAYOUT])
         for bomb in bombs:
             bomb.update()
         for obj in objects:
@@ -457,7 +524,7 @@ while play:
                         continue
                     enemies[data[0][1][i]].update_position(data[1][1][i]) #[x, y]
                     for j in data[3][1][i]:
-                        Bomb(enemies[data[0][1][i]], j[0], j[1])
+                        Bomb(enemies[data[0][1][i]], floor(j[0] * new_width / WIDTH / (new_tile // 2)) * (new_tile // 2), floor(j[1] * new_height / HEIGHT / (new_tile // 2)) * (new_tile // 2))
                 if data[-1][0] == "removed_players" and len(data[-1][1]) > 0:
                     for p in data[-1][1]:
                         if p in enemies.keys():
@@ -465,8 +532,8 @@ while play:
 
         except:
             errors +=1
-        for tileX in range(0, WIDTH, TILE):
-            for tileY in range(TILE, HEIGHT, TILE):
+        for tileX in range(0, new_width, new_tile):
+            for tileY in range(new_points_height, new_height, new_tile):
                 window.blit(imgGrass, (tileX, tileY))
         for bomb in bombs:
             bomb.draw()
@@ -476,7 +543,7 @@ while play:
         clock.tick(FPS)
 
     pygame.display.update()
-
+    RESIZE_FLAG = False
     if errors >= 100:
         play = False
 
