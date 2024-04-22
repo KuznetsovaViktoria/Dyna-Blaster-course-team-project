@@ -32,7 +32,7 @@ field2 = [
         ["E", "E", "E", "B", "E", "E", "E", "B", "E", "E", "E", "B", "E"]
     ]
 
-labirinth_field = field2
+labyrinth_field = field2
 
 field3 = [
         ["E", "E", "W", "W", "W", "E", "W", "W", "W", "W", "W", "E", "E"],

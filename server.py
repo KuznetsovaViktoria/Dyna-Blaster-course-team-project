@@ -8,19 +8,36 @@ POINTS_HEIGHT = 4 * TILE
 HEIGHT = WIDTH + POINTS_HEIGHT
 BLOCKS = []
 BLOCKS_CANT_BROKE = []
-fields = [scull_field, empty_field, busy_field, labirinth_field, random_field]
+fields = {"empty_field": empty_field, "random_field": random_field, "scull_field":scull_field, "busy_field": busy_field, "labyrinth_field": labyrinth_field}
+
 def fieldToArray():
-    global BLOCKS, BLOCKS_CANT_BROKE
-    random.shuffle(fields)
-    FIELD = fields[0]
+    global BLOCKS, BLOCKS_CANT_BROKE, FIELD, positions
+    keys = list(fields.keys())
+    random.shuffle(keys)
+    FIELD = fields[keys[0]]
     for i in range(13):
         for j in range(13):
             if FIELD[i][j] == "B":
                 BLOCKS_CANT_BROKE.append((j * TILE, i* TILE + POINTS_HEIGHT))
             elif FIELD[i][j] == "W":
                 BLOCKS.append((j * TILE, i* TILE + POINTS_HEIGHT))
+    FIELD = keys[0]
+    if FIELD == "empty_field":
+        positions = [[0, POINTS_HEIGHT], [WIDTH - TILE, HEIGHT - TILE], [WIDTH - TILE, POINTS_HEIGHT], [0, HEIGHT - TILE],
+                     [TILE * 6, POINTS_HEIGHT + TILE * 2], [TILE * 6, HEIGHT - TILE * 3], [TILE * 3, HEIGHT - TILE * 7], [WIDTH - TILE * 4, HEIGHT - TILE * 7]]
+    elif FIELD == "random_field":
+        positions = [[0, POINTS_HEIGHT], [WIDTH - TILE, HEIGHT - TILE], [WIDTH - 5 * TILE, POINTS_HEIGHT + TILE], [TILE * 2, HEIGHT - 2 * TILE],
+                     [TILE * 2, HEIGHT - 7 * TILE], [TILE * 6, POINTS_HEIGHT + 4 * TILE], [6 * TILE, HEIGHT - 2 * TILE], [WIDTH - 3 * TILE, HEIGHT - 7 * TILE]]
+    elif FIELD == "scull_field":
+        positions = [[0, POINTS_HEIGHT], [WIDTH - TILE, HEIGHT - TILE], [WIDTH - TILE, POINTS_HEIGHT], [0, HEIGHT - TILE],
+                     [TILE * 2, POINTS_HEIGHT + TILE * 6], [TILE * 6, HEIGHT - TILE], [TILE * 6, POINTS_HEIGHT], [WIDTH - TILE * 3, POINTS_HEIGHT + TILE * 6]]
+    elif FIELD == "busy_field":
+        positions = [[0, POINTS_HEIGHT], [WIDTH - TILE, HEIGHT - TILE], [WIDTH - TILE, POINTS_HEIGHT], [0, HEIGHT - TILE],
+                     [TILE * 2, POINTS_HEIGHT + TILE * 6], [TILE * 6, HEIGHT - TILE], [TILE * 5, POINTS_HEIGHT + TILE], [WIDTH - TILE * 3, POINTS_HEIGHT + TILE * 5]]
+    elif FIELD == "labyrinth_field":
+        positions = [[0, POINTS_HEIGHT], [WIDTH - TILE, HEIGHT - TILE], [TILE * 7, POINTS_HEIGHT], [TILE * 5, HEIGHT - TILE],
+                     [3 * TILE, POINTS_HEIGHT], [TILE * 9, HEIGHT - TILE], [TILE * 11, POINTS_HEIGHT], [TILE, HEIGHT - TILE]]
 
-fieldToArray()
 class Player:
     def __init__(self, sock, name, color, pos):
         self.sock = sock
@@ -48,7 +65,6 @@ def end_game(msg):
     print("GAME ENDED: ", msg)
     exit(0)
 
-
 main_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 main_socket.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
 HOST = '127.0.0.1'  # localhost
@@ -56,7 +72,7 @@ HOST = '127.0.0.1'  # localhost
 PORT = 1093 # any above 1023
 main_socket.bind((HOST, PORT))
 main_socket.setblocking(0)
-kExpectedPlayers = 2    #change anytime
+kExpectedPlayers = 4    #change anytime
 main_socket.listen(kExpectedPlayers)   #change anytime
 
 # making connection with players
@@ -64,7 +80,8 @@ players = []
 names = []
 removed_players = []
 colors = ["red", "blue", "gray", "white", "pink", "black", "orange", "yellow"]
-positions = [[0, POINTS_HEIGHT], [WIDTH - TILE, HEIGHT - TILE], [WIDTH - TILE, POINTS_HEIGHT], [0, HEIGHT - TILE]]
+positions = []
+fieldToArray()
 while True:
     try:  # connect players
         new_socket, addr = main_socket.accept()
@@ -84,7 +101,7 @@ for player in players: # may have used sendall, but needed to count errors for e
         try:
             player.sock.send(pickle.dumps([["message", "start"], ["all_players_names", names], ["field_layout", [BLOCKS, BLOCKS_CANT_BROKE]],
                                            ["your_name", player.name], ["your_color", player.color], ["your_position", player.pos],
-                                           ["all_players_colors", colors], ["all_players_positions", positions]]))
+                                           ["all_players_colors", colors[:kExpectedPlayers]], ["all_players_positions", positions[:kExpectedPlayers]]]))
             player.errors = 0
         except:
             if player.errors >= 10:
@@ -103,8 +120,16 @@ while True:
             for [key, value] in data[1:]:
                 if key == "pos":
                     player.pos = value
+                    if player.pos[0] % TILE < TILE - player.pos[0] % TILE:
+                        player.pos[0] -= player.pos[0] % TILE
+                    else:
+                        player.pos[0] += TILE - player.pos[0] % TILE
+                    if player.pos[1] % TILE < TILE - player.pos[1] % TILE:
+                        player.pos[1] -= player.pos[1] % TILE
+                    else:
+                        player.pos[1] += TILE - player.pos[1] % TILE
                     received_data_name_order += [data[0][1]]
-                    positions.append(value)
+                    positions.append(player.pos)
                 if key == "hp":
                     player.hp = value
                     hps.append(value)
