@@ -5,9 +5,8 @@ my_pos =[0, 0]
 TILE = 0
 WIDTH = 0
 
-def set_first_params(x, y, t, w):
-    global my_pos, WIDTH, TILE
-    my_pos = [x, y]
+def set_first_params(t, w):
+    global WIDTH, TILE
     TILE = t
     WIDTH = w
 

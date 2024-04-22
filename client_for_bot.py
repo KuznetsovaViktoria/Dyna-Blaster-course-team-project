@@ -267,20 +267,6 @@ class Bomb:
             Bang(self.px - TILE, self.py, self.parent)
             Bang(self.px, self.py + TILE, self.parent)
             Bang(self.px, self.py - TILE, self.parent)
-            # for obj in objects:
-            #     if obj.type != 'bang' and obj.hp > 0 and (obj.rect.collidepoint(self.px, self.py) or
-            #                                obj.rect.collidepoint(self.px + TILE, self.py) or
-            #                                obj.rect.collidepoint(self.px - TILE, self.py) or
-            #                                obj.rect.collidepoint(self.px, self.py + TILE) or
-            #                                obj.rect.collidepoint(self.px, self.py - TILE)):
-            #         if obj.type == 'block':
-            #             self.parent.points += 1
-            #         if obj.type == 'tank':
-            #             if obj == self.parent:
-            #                 self.parent.points -= 5
-            #             else:
-            #                 self.parent.points += 20
-            #         obj.damage(self.damage)
 
     def draw(self):
         image = imgBomb
@@ -396,7 +382,7 @@ def game_play_pressed():
                     print("i'm", color)
                 elif key == 'your_position':
                     pos = value
-                    set_first_params(pos[0], pos[1] - TILE, TILE, WIDTH)
+                    set_first_params(TILE, WIDTH)
                 elif key == 'all_players_colors':
                     enemies_colors = value
                 elif key == 'all_players_positions':
