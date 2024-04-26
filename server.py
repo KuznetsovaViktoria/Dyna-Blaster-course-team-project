@@ -13,8 +13,8 @@ fields = {"empty_field": empty_field, "random_field": random_field, "scull_field
 def fieldToArray(field_name):
     global BLOCKS, BLOCKS_CANT_BROKE, FIELD, positions
     print(field_name)
-    keys = list(fields.keys())
-    random.shuffle(keys)
+    # keys = list(fields.keys())
+    # random.shuffle(keys)
     FIELD = fields[field_name]
     for i in range(13):
         for j in range(13):
@@ -23,6 +23,8 @@ def fieldToArray(field_name):
             elif FIELD[i][j] == "W":
                 BLOCKS.append((j * TILE, i* TILE + POINTS_HEIGHT))
     # FIELD = keys[0]
+
+
     if field_name == "empty_field":
         positions = [[0, POINTS_HEIGHT], [WIDTH - TILE, HEIGHT - TILE], [WIDTH - TILE, POINTS_HEIGHT], [0, HEIGHT - TILE],
                      [TILE * 6, POINTS_HEIGHT + TILE * 2], [TILE * 6, HEIGHT - TILE * 3], [TILE * 3, HEIGHT - TILE * 7], [WIDTH - TILE * 4, HEIGHT - TILE * 7]]
@@ -40,11 +42,11 @@ def fieldToArray(field_name):
                      [3 * TILE, POINTS_HEIGHT], [TILE * 9, HEIGHT - TILE], [TILE * 11, POINTS_HEIGHT], [TILE, HEIGHT - TILE]]
 
 class Player:
-    def __init__(self, sock, name, color, pos):
+    def __init__(self, sock, name, color):
         self.sock = sock
         self.name = name
         self.errors = 0
-        self.pos = pos
+        self.pos = [0, 0]
         self.color = color
         self.hp = 5
         self.bombs = []
@@ -73,7 +75,7 @@ HOST = '127.0.0.1'  # localhost
 PORT = 1093 # any above 1023
 main_socket.bind((HOST, PORT))
 main_socket.setblocking(0)
-kExpectedPlayers = 4    #change anytime
+kExpectedPlayers = 2    #change anytime
 main_socket.listen(kExpectedPlayers)   #change anytime
 
 # making connection with players
@@ -89,13 +91,12 @@ while True:
         print("Connected ", addr)
         new_socket.setblocking(0)
         new_socket.settimeout(6000) # установка таймаута
-        data = pickle.loads(new_socket.recv(1024 * 8))
-        print(data)
-        for [key, value] in data:
-            if key == "map_name":
-                fields[value] += 1
-            print(value)
-        players.append(Player(new_socket, addr, colors[len(players)], positions[len(players)]))
+        while True:
+            data = pickle.loads(new_socket.recv(1024 * 8))
+            if len(data) > 0:
+                field_names[data] += 1
+                break
+        players.append(Player(new_socket, addr, colors[len(players)]))
         names.append(addr)
         if len(players) == kExpectedPlayers:
             print("all payers connected")
@@ -103,7 +104,9 @@ while True:
     except:
         pass
 
-fieldToArray(sorted(field_names.items(), key=lambda p: -p[1])[0])
+fieldToArray(sorted(field_names.items(), key=lambda p: -p[1])[0][0])
+for i in range(kExpectedPlayers):
+    players[i].pos = positions[i]
 
 #ready to start the game
 for player in players: # may have used sendall, but needed to count errors for each player

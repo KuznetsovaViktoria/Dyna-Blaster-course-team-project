@@ -401,7 +401,7 @@ class BlockCantBroke:
 def game_play_pressed(map_name):
     global GAME_STARTED, all_players_names, BLOCKS_LAYOUT, BLOCKS_CANT_BROKE_LAYOUT, my_tank, enemies, objects, sock, time_started
     sock.connect((HOST, PORT))
-    # sock.send(dumps([["map_name", map_name]]))
+    sock.send(dumps(map_name))
     print(map_name)
     name, color, pos = 0, 0, 0
     enemies_colors, enemies_positions = [], []
