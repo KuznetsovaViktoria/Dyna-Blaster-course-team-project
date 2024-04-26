@@ -10,31 +10,32 @@ BLOCKS = []
 BLOCKS_CANT_BROKE = []
 fields = {"empty_field": empty_field, "random_field": random_field, "scull_field":scull_field, "busy_field": busy_field, "labyrinth_field": labyrinth_field}
 
-def fieldToArray():
+def fieldToArray(field_name):
     global BLOCKS, BLOCKS_CANT_BROKE, FIELD, positions
+    print(field_name)
     keys = list(fields.keys())
     random.shuffle(keys)
-    FIELD = fields[keys[0]]
+    FIELD = fields[field_name]
     for i in range(13):
         for j in range(13):
             if FIELD[i][j] == "B":
                 BLOCKS_CANT_BROKE.append((j * TILE, i* TILE + POINTS_HEIGHT))
             elif FIELD[i][j] == "W":
                 BLOCKS.append((j * TILE, i* TILE + POINTS_HEIGHT))
-    FIELD = keys[0]
-    if FIELD == "empty_field":
+    # FIELD = keys[0]
+    if field_name == "empty_field":
         positions = [[0, POINTS_HEIGHT], [WIDTH - TILE, HEIGHT - TILE], [WIDTH - TILE, POINTS_HEIGHT], [0, HEIGHT - TILE],
                      [TILE * 6, POINTS_HEIGHT + TILE * 2], [TILE * 6, HEIGHT - TILE * 3], [TILE * 3, HEIGHT - TILE * 7], [WIDTH - TILE * 4, HEIGHT - TILE * 7]]
-    elif FIELD == "random_field":
+    elif field_name == "random_field":
         positions = [[0, POINTS_HEIGHT], [WIDTH - TILE, HEIGHT - TILE], [WIDTH - 5 * TILE, POINTS_HEIGHT + TILE], [TILE * 2, HEIGHT - 2 * TILE],
                      [TILE * 2, HEIGHT - 7 * TILE], [TILE * 6, POINTS_HEIGHT + 4 * TILE], [6 * TILE, HEIGHT - 2 * TILE], [WIDTH - 3 * TILE, HEIGHT - 7 * TILE]]
-    elif FIELD == "scull_field":
+    elif field_name == "scull_field":
         positions = [[0, POINTS_HEIGHT], [WIDTH - TILE, HEIGHT - TILE], [WIDTH - TILE, POINTS_HEIGHT], [0, HEIGHT - TILE],
                      [TILE * 2, POINTS_HEIGHT + TILE * 6], [TILE * 6, HEIGHT - TILE], [TILE * 6, POINTS_HEIGHT], [WIDTH - TILE * 3, POINTS_HEIGHT + TILE * 6]]
-    elif FIELD == "busy_field":
+    elif field_name == "busy_field":
         positions = [[0, POINTS_HEIGHT], [WIDTH - TILE, HEIGHT - TILE], [WIDTH - TILE, POINTS_HEIGHT], [0, HEIGHT - TILE],
                      [TILE * 2, POINTS_HEIGHT + TILE * 6], [TILE * 6, HEIGHT - TILE], [TILE * 5, POINTS_HEIGHT + TILE], [WIDTH - TILE * 3, POINTS_HEIGHT + TILE * 5]]
-    elif FIELD == "labyrinth_field":
+    elif field_name == "labyrinth_field":
         positions = [[0, POINTS_HEIGHT], [WIDTH - TILE, HEIGHT - TILE], [TILE * 7, POINTS_HEIGHT], [TILE * 5, HEIGHT - TILE],
                      [3 * TILE, POINTS_HEIGHT], [TILE * 9, HEIGHT - TILE], [TILE * 11, POINTS_HEIGHT], [TILE, HEIGHT - TILE]]
 
@@ -81,13 +82,19 @@ names = []
 removed_players = []
 colors = ["red", "blue", "gray", "white", "pink", "black", "orange", "yellow"]
 positions = []
-fieldToArray()
+field_names = {field_name: 0 for field_name in fields.keys()}
 while True:
     try:  # connect players
         new_socket, addr = main_socket.accept()
         print("Connected ", addr)
         new_socket.setblocking(0)
         new_socket.settimeout(6000) # установка таймаута
+        data = pickle.loads(new_socket.recv(1024 * 8))
+        print(data)
+        for [key, value] in data:
+            if key == "map_name":
+                fields[value] += 1
+            print(value)
         players.append(Player(new_socket, addr, colors[len(players)], positions[len(players)]))
         names.append(addr)
         if len(players) == kExpectedPlayers:
@@ -95,6 +102,8 @@ while True:
             break
     except:
         pass
+
+fieldToArray(sorted(field_names.items(), key=lambda p: -p[1])[0])
 
 #ready to start the game
 for player in players: # may have used sendall, but needed to count errors for each player
