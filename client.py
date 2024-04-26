@@ -27,12 +27,15 @@ old_height = HEIGHT
 FPS = 8
 GAME_STARTED = False
 time_started = 0
+fontUISize = 35
+endgameFontUISize = 50
+timeFontUISize = 100
 
 window = pygame.display.set_mode((WIDTH, HEIGHT), pygame.RESIZABLE)
 
-fontUI = pygame.font.Font(None, 35)
-endgameFontUI = pygame.font.Font(None, 50)
-timeFontUI = pygame.font.Font(None, 100)
+fontUI = pygame.font.Font(None, fontUISize)
+endgameFontUI = pygame.font.Font(None, endgameFontUISize)
+timeFontUI = pygame.font.Font(None, timeFontUISize)
 
 
 def resize_all_images():
@@ -469,6 +472,12 @@ while play:
             new_tile = new_width // 13
             new_points_height = 4 * new_tile
             new_height = new_width + new_points_height
+            fontUISize = fontUISize * new_width // old_width
+            endgameFontUISize = endgameFontUISize * new_width // old_width
+            timeFontUISize = timeFontUISize * new_width // old_width
+            fontUI = pygame.font.Font(None, fontUISize)
+            endgameFontUI = pygame.font.Font(None, endgameFontUISize)
+            timeFontUI = pygame.font.Font(None, timeFontUISize)
             window = pygame.display.set_mode((new_width, new_height), pygame.RESIZABLE)
             RESIZE_FLAG = True
             resize_all_images()
