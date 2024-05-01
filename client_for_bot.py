@@ -320,6 +320,7 @@ class Bomb:
 class Bang:
     def __init__(self, px, py, parent):
         objects.append(self)
+        bangs.append(self)
         self.type = 'bang'
 
         self.parent = parent
@@ -331,6 +332,7 @@ class Bang:
         self.frame += 0.6
         if self.frame >= 3:
             objects.remove(self)
+            bangs.remove(self)
             return
         for obj in objects:
             if obj.type != 'bang' and obj.hp > 0 and obj.rect.collidepoint(self.px, self.py):
@@ -471,6 +473,7 @@ map_menu.append_option('Labyrinth field', lambda: game_play_pressed('labyrinth_f
 map_menu.append_option('Random field', lambda: game_play_pressed('random_field'))
 
 bombs = []
+bangs = []
 objects = []
 ui = UI()
 
@@ -523,8 +526,9 @@ while play:
         bot_move = get_bot_move((new_x_to_old_x(my_tank.rect.x), new_y_to_old_y(my_tank.rect.y) - POINTS_HEIGHT), 
                                 [(new_x_to_old_x(e.rect.x), new_y_to_old_y(e.rect.y) - POINTS_HEIGHT) for e in enemies.values()], 
                                 [e.points for e in enemies.values()], 
-                                [(new_x_to_old_x(b.px) - TILE // 2, new_y_to_old_y(b.py) - POINTS_HEIGHT - TILE // 2) for b in bombs], 
-                                [(x, y - POINTS_HEIGHT) for (x, y) in BLOCKS_LAYOUT], 
+                                [(new_x_to_old_x(b.px), new_y_to_old_y(b.py) - POINTS_HEIGHT) for b in bombs],
+                                [(new_x_to_old_x(b.px), new_y_to_old_y(b.py) - POINTS_HEIGHT) for b in bangs],
+                                [(x, y - POINTS_HEIGHT) for (x, y) in BLOCKS_LAYOUT],
                                 [(x, y - POINTS_HEIGHT) for (x, y) in BLOCKS_CANT_BROKE_LAYOUT])
         for bomb in bombs:
             bomb.update()

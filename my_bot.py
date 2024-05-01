@@ -85,12 +85,13 @@ def block_distance_finder(stones_layout, blocks_layout, bombs_positions, enemies
             q.put((x, y + TILE))
     return layout
 
-def get_bot_move(my_position, enemies_positions, enemies_points, bombs_positions,  blocks_layout, stones_layout):
+def get_bot_move(my_position, enemies_positions, enemies_points, bombs_positions, bangs_positions,  blocks_layout, stones_layout):
     keys_to_move = []
     my_x, my_y = my_position
     free_positions = free(blocks_layout, stones_layout)
     free_positions_without_bombs = without_bombs(free_positions, bombs_positions)
     for bomb_x, bomb_y in bombs_positions:
+        # print(bomb_x, my_x, bomb_y, my_y)
         if bomb_x == my_x and bomb_y == my_y:
             if (my_x - 1 * TILE, my_y) in free_positions and pos_good_for_escape(my_x - 1 * TILE, my_y, free_positions_without_bombs)[0]:
                 keys_to_move.append(K_LEFT)
@@ -100,6 +101,7 @@ def get_bot_move(my_position, enemies_positions, enemies_points, bombs_positions
                 keys_to_move.append(K_UP)
             if (my_x, my_y + 1 * TILE) in free_positions and pos_good_for_escape(my_x, my_y + 1 * TILE, free_positions_without_bombs)[0]:
                 keys_to_move.append(K_DOWN)
+            # print(keys_to_move)
             if len(keys_to_move) > 0:
                 return random.choice(keys_to_move)
         if (bomb_x + 1 * TILE == my_x and bomb_y == my_y) or (bomb_x - 1 * TILE == my_x and bomb_y == my_y) or (bomb_x == my_x and bomb_y + 1 * TILE == my_y) or (bomb_x == my_x and bomb_y - 1 * TILE == my_y):
