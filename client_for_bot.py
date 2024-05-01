@@ -27,13 +27,17 @@ old_points_height = POINTS_HEIGHT
 old_height = HEIGHT
 FPS = 8
 GAME_STARTED = False
+IS_MAP_CHOOSING = False
 time_started = 0
+fontUISize = 35
+endgameFontUISize = 50
+timeFontUISize = 100
 
 window = pygame.display.set_mode((WIDTH, HEIGHT), pygame.RESIZABLE)
 
-fontUI = pygame.font.Font(None, 35)
-endgameFontUI = pygame.font.Font(None, 50)
-timeFontUI = pygame.font.Font(None, 100)
+fontUI = pygame.font.Font(None, fontUISize)
+endgameFontUI = pygame.font.Font(None, endgameFontUISize)
+timeFontUI = pygame.font.Font(None, timeFontUISize)
 
 def resize_all_images():
     global imgBackground, imgBangs, imgBlockCantBroke, imgBomb, imgBrick, imgGrass, imgTanks
@@ -401,13 +405,15 @@ class BlockCantBroke:
         return ['block_cant_broke']
 
 
-def game_play_pressed():
+def game_play_pressed(map_name):
     global GAME_STARTED, all_players_names, BLOCKS_LAYOUT, BLOCKS_CANT_BROKE_LAYOUT, my_tank, enemies, objects, sock, time_started
     sock.connect((HOST, PORT))
+    sock.send(dumps(map_name))
+    print(map_name)
     name, color, pos = 0, 0, 0
     enemies_colors, enemies_positions = [], []
     while True:
-        data = loads(sock.recv(4096 * 4))
+        data = loads(sock.recv(1024 * 32))
         sock.settimeout(0.5)
         if len(data) > 0 and len(data[0]) > 0 and data[0][1] == 'start':
             for t in range(3):
@@ -431,7 +437,7 @@ def game_play_pressed():
                     print("i'm", color)
                 elif key == 'your_position':
                     pos = value
-                    set_first_params(TILE, WIDTH)
+                    set_first_params(pos[0], pos[1], TILE, WIDTH)
                 elif key == 'all_players_colors':
                     enemies_colors = value
                 elif key == 'all_players_positions':
@@ -447,11 +453,22 @@ def game_play_pressed():
     make_grid()
     time_started = time()
 
+def make_map_choosing():
+    global IS_MAP_CHOOSING
+    IS_MAP_CHOOSING = True
+
 
 menu = Menu()
 menu.append_option('Waiting for player', lambda: print('Welcome'), 'brown')
-menu.append_option('Play', lambda: game_play_pressed())
+menu.append_option('Play', lambda: make_map_choosing())
 menu.append_option('Quit', lambda: pygame.quit())
+map_menu = Menu()
+map_menu.append_option('Vote for map', lambda: print('Map choosing'), 'brown')
+map_menu.append_option('Empty field', lambda: game_play_pressed('empty_field'))
+map_menu.append_option('Scull field', lambda: game_play_pressed('scull_field'))
+map_menu.append_option('Busy field', lambda: game_play_pressed('busy_field'))
+map_menu.append_option('Labyrinth field', lambda: game_play_pressed('labyrinth_field'))
+map_menu.append_option('Random field', lambda: game_play_pressed('random_field'))
 
 bombs = []
 objects = []
@@ -478,19 +495,28 @@ while play:
             new_tile = new_width // 13
             new_points_height = 4 * new_tile
             new_height = new_width + new_points_height
+            fontUISize = fontUISize * new_width // old_width
+            endgameFontUISize = endgameFontUISize * new_width // old_width
+            timeFontUISize = timeFontUISize * new_width // old_width
+            fontUI = pygame.font.Font(None, fontUISize)
+            endgameFontUI = pygame.font.Font(None, endgameFontUISize)
+            timeFontUI = pygame.font.Font(None, timeFontUISize)
             window = pygame.display.set_mode((new_width, new_height), pygame.RESIZABLE)
             RESIZE_FLAG = True
             resize_all_images()
         elif not GAME_STARTED and event.type == pygame.KEYDOWN:
+            current_menu = map_menu if IS_MAP_CHOOSING else menu
             if event.key == pygame.K_UP:
-                menu.switch(-1)
+                current_menu.switch(-1)
             elif event.key == pygame.K_DOWN:
-                menu.switch(1)
+                current_menu.switch(1)
             elif event.key == pygame.K_RETURN:
-                menu.select()
+                current_menu.select()
         if not GAME_STARTED and not GAME_FINISHED:
+            current_menu = map_menu if IS_MAP_CHOOSING else menu
+            current_delta = 40 if IS_MAP_CHOOSING else 100
             window.blit(imgBackground, (0, 0))
-            menu.draw(window, 100)
+            current_menu.draw(window, current_delta)
     if not play:
         break 
     if GAME_STARTED and not GAME_FINISHED:
