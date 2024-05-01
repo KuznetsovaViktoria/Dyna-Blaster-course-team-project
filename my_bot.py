@@ -26,10 +26,12 @@ def free(blocks_layout, stones_layout):
             free_positions.append((x, y))
     return free_positions
 
-def without_bombs(free_positions, bombs_positions):
+def without_bombs(free_positions, bombs_positions, bangs_positions):
     free_positions_no_bombs = []
     for x,y in free_positions:
         if (x, y) in bombs_positions or (x + 1 * TILE, y) in bombs_positions or (x - 1 * TILE, y) in bombs_positions or (x, y + 1 * TILE) in bombs_positions or (x, y - 1 * TILE) in bombs_positions:
+            continue
+        if (x, y) in bangs_positions:
             continue
         free_positions_no_bombs.append((x, y))
     return free_positions_no_bombs
@@ -46,7 +48,7 @@ def pos_good_for_escape(x, y, free_positions):
     return False, None
 
 # cчитает для каждой клетки поля расстояние до ближайшего блока
-def block_distance_finder(stones_layout, blocks_layout, bombs_positions, enemies_positions):
+def block_distance_finder(stones_layout, blocks_layout, bombs_positions, bangs_positions, enemies_positions):
     layout = dict()
     for x in range(0, WIDTH, TILE):
         for y in range(0, WIDTH, TILE):
@@ -60,6 +62,8 @@ def block_distance_finder(stones_layout, blocks_layout, bombs_positions, enemies
         layout[(x - 1 * TILE, y)] = INF
         layout[(x, y + 1 * TILE)] = INF
         layout[(x, y - 1 * TILE)] = INF
+    for bang in bangs_positions:
+        layout[bang] = INF
     for block in blocks_layout:
         layout[block] = 0
     for enemy in enemies_positions:
@@ -89,7 +93,7 @@ def get_bot_move(my_position, enemies_positions, enemies_points, bombs_positions
     keys_to_move = []
     my_x, my_y = my_position
     free_positions = free(blocks_layout, stones_layout)
-    free_positions_without_bombs = without_bombs(free_positions, bombs_positions)
+    free_positions_without_bombs = without_bombs(free_positions, bombs_positions, bangs_positions)
     for bomb_x, bomb_y in bombs_positions:
         # print(bomb_x, my_x, bomb_y, my_y)
         if bomb_x == my_x and bomb_y == my_y:
@@ -119,7 +123,7 @@ def get_bot_move(my_position, enemies_positions, enemies_points, bombs_positions
                 if bomb_x == my_x and bomb_y - 1 * TILE == my_y:
                     return K_DOWN
 
-    layout = block_distance_finder(stones_layout, blocks_layout, bombs_positions, enemies_positions)
+    layout = block_distance_finder(stones_layout, blocks_layout, bombs_positions, bangs_positions, enemies_positions)
     dist = layout[my_position]
     if dist != -1:
         if dist <= 1:
