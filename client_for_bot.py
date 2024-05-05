@@ -4,6 +4,12 @@ import socket
 from pickle import loads, dumps
 from time import time, sleep
 from math import *
+from pygame import mixer
+
+#Instantiate mixer
+mixer.init()
+mixer.music.load('menu.mp3')
+mixer.music.play()
 
 sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 sock.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
@@ -140,6 +146,8 @@ class UI:
             winnerRect = winnerText.get_rect(top=new_height // 2, centerx=new_width // 2)
             window.blit(gameOverText, gameOverRect)
             window.blit(winnerText, winnerRect)
+            mixer.music.load('menu.mp3')
+            mixer.music.play()
         else:
             self.seconds = seconds
         pygame.draw.rect(window, 'green', (0, 0, new_width, new_points_height))
@@ -454,6 +462,8 @@ def game_play_pressed(map_name):
         enemies[name] = EnemyTank(name, enemies_positions[i], enemies_colors[i], 0)
     make_grid()
     time_started = time()
+    mixer.music.load('game.mp3')
+    mixer.music.play()
 
 def make_map_choosing():
     global IS_MAP_CHOOSING
