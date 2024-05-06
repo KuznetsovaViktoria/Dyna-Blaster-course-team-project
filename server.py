@@ -29,8 +29,8 @@ def fieldToArray(field_name):
         positions = [[0, POINTS_HEIGHT], [WIDTH - TILE, HEIGHT - TILE], [WIDTH - TILE, POINTS_HEIGHT], [0, HEIGHT - TILE],
                      [TILE * 6, POINTS_HEIGHT + TILE * 2], [TILE * 6, HEIGHT - TILE * 3], [TILE * 3, HEIGHT - TILE * 7], [WIDTH - TILE * 4, HEIGHT - TILE * 7]]
     elif field_name == "random_field":
-        positions = [[0, POINTS_HEIGHT], [WIDTH - TILE, HEIGHT - TILE], [WIDTH - 5 * TILE, POINTS_HEIGHT + TILE], [TILE * 2, HEIGHT - 2 * TILE],
-                     [TILE * 2, HEIGHT - 7 * TILE], [TILE * 6, POINTS_HEIGHT + 4 * TILE], [6 * TILE, HEIGHT - 2 * TILE], [WIDTH - 3 * TILE, HEIGHT - 7 * TILE]]
+        positions = [[0, POINTS_HEIGHT], [WIDTH - TILE, HEIGHT - TILE], [WIDTH - 6 * TILE, POINTS_HEIGHT + 4 * TILE], [TILE * 2, HEIGHT - 2 * TILE],
+                     [TILE * 2, HEIGHT - 7 * TILE], [TILE * 6, POINTS_HEIGHT + 6 * TILE], [8 * TILE, HEIGHT - 4 * TILE], [WIDTH - 3 * TILE, HEIGHT - 7 * TILE]]
     elif field_name == "scull_field":
         positions = [[0, POINTS_HEIGHT], [WIDTH - TILE, HEIGHT - TILE], [WIDTH - TILE, POINTS_HEIGHT], [0, HEIGHT - TILE],
                      [TILE * 2, POINTS_HEIGHT + TILE * 6], [TILE * 6, HEIGHT - TILE], [TILE * 6, POINTS_HEIGHT], [WIDTH - TILE * 3, POINTS_HEIGHT + TILE * 6]]
@@ -75,7 +75,7 @@ HOST = '127.0.0.1'  # localhost
 PORT = 1093 # any above 1023
 main_socket.bind((HOST, PORT))
 main_socket.setblocking(0)
-kExpectedPlayers = 2    #change anytime
+kExpectedPlayers = 4    #change anytime
 main_socket.listen(kExpectedPlayers)   #change anytime
 
 # making connection with players
