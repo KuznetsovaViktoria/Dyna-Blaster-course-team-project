@@ -1,5 +1,5 @@
 import pygame
-from bot_erika import get_bot_move, set_first_params
+from my_bot import get_bot_move, set_first_params
 import socket
 from pickle import loads, dumps
 from time import time, sleep
