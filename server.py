@@ -53,10 +53,14 @@ class Player:
         self.received_data = []
 
 def remove_from_game(player):
-    global players, removed_players
+    global players
     if player in players:
+        try:
+            player.sock.send(pickle.dumps('you are dead'))
+            player.errors = 0
+        except:
+            pass
         players.remove(player)
-        removed_players.append(player.name)
         player.sock.close()
         print("Player disconnected")
         if len(players) == 0:
@@ -75,13 +79,12 @@ HOST = '127.0.0.1'  # localhost
 PORT = 1093 # any above 1023
 main_socket.bind((HOST, PORT))
 main_socket.setblocking(0)
-kExpectedPlayers = 4    #change anytime
+kExpectedPlayers = 6    #change anytime
 main_socket.listen(kExpectedPlayers)   #change anytime
 
 # making connection with players
 players = []
 names = []
-removed_players = []
 colors = ["red", "blue", "gray", "white", "pink", "black", "orange", "yellow"]
 positions = []
 field_names = {field_name: 0 for field_name in fields.keys()}
@@ -151,20 +154,23 @@ while True:
 
         except:
             player.errors += 1
-            if player.errors >= 10:
+            if player.errors >= 1:
                 remove_from_game(player)
     # parse commands
+    for i in range(len(hps) - 1, -1, -1):
+        if hps[i] != 1:
+            remove_from_game(players[i])
 
     #sending new positions and hp_s to players
     if len(received_data_name_order) == 0:
         continue
     for player in players:
         try:
-            player.sock.send(pickle.dumps([["names", received_data_name_order], ["positions", positions], ["hps", hps], ["bombs", bombs], ["removed_players", removed_players]]))
+            player.sock.send(pickle.dumps([["names", received_data_name_order], ["positions", positions], ["hps", hps], ["bombs", bombs]]))
             player.errors = 0
         except:
             player.errors += 1
-            if player.errors >= 10:
+            if player.errors >= 1:
                 remove_from_game(player)
     if len(players) == 0:
         break

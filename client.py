@@ -125,7 +125,7 @@ class UI:
         seconds = max(0, 180 - int(time() - time_started))
 
 
-        if len(tanksAlive) <= 1 or seconds <= 0:
+        if len(tanksAlive) <= 1 or seconds <= 0 or my_tank.hp <= 0:
             possible_winners = tanks if len(tanksAlive) == 0 else tanksAlive
             GAME_FINISHED = True
             window.blit(imgBackground, (0, 0))
@@ -133,6 +133,12 @@ class UI:
             winners = [tank.color for tank in possible_winners if tank.points == winnerPoints]
             color = 'purple' if len(winners) > 1 else winners[0]
             winnersText = 'Draw!' if len(winners) > 1 else f'{winners[0]} wins'
+            if my_tank.hp <= 0:
+                winnersText = "Oops! You're dead :( "
+                if len(tanksAlive) <= 1 and winners != []:
+                    winnersText += f'{winners[0]} wins'
+                else:
+                    color = my_tank.color
             gameOverText = endgameFontUI.render(f'Game over', 1, color)
             gameOverRect = gameOverText.get_rect(bottom=new_height // 2, centerx=new_width // 2)
             winnerText = endgameFontUI.render(winnersText, 1, color)
@@ -287,9 +293,10 @@ class EnemyTank:
         pass
 
     def damage(self, value):
-        self.hp -= value
-        if self.hp <= 0:
-            print(self.color, 'dead')
+        # self.hp -= value
+        # if self.hp <= 0:
+        #     print(self.color, 'dead')
+        pass
     
     def draw(self):
         if self.hp > 0:
@@ -306,6 +313,11 @@ class Bomb:
         self.parent = parent
 
     def update(self):
+        for obj in objects:
+            if obj.type == 'tank' and obj.hp > 0 and obj.rect.collidepoint(self.px, self.py):
+                if obj != self.parent:
+                    self.parent.points += 20
+                    obj.damage(self.damage)
         self.timer -= 1
         if self.timer == 0:
             bombs.remove(self)
@@ -524,7 +536,6 @@ while play:
             bomb.update()
         for obj in objects:
             obj.update()
-        ui.update()
         data = []
         try:
             sock.send(dumps(my_tank.get_data()))
@@ -534,6 +545,9 @@ while play:
             errors +=1
         try:
             data = loads(sock.recv(4096 * 4))
+            if data == 'you are dead':
+                my_tank.hp = 0
+                ui.draw()
             errors = 0
             if len(data) > 0 and len(data[0]) > 1:
                 for i in range(len(data[0][1])): 
@@ -542,10 +556,15 @@ while play:
                     enemies[data[0][1][i]].update_position(data[1][1][i]) #[x, y]
                     for j in data[3][1][i]:
                         Bomb(enemies[data[0][1][i]], floor(j[0] * new_width / WIDTH / (new_tile // 2)) * (new_tile // 2), floor(j[1] * new_height / HEIGHT / (new_tile // 2)) * (new_tile // 2))
-                if data[-1][0] == "removed_players" and len(data[-1][1]) > 0:
-                    for p in data[-1][1]:
-                        if p in enemies.keys():
-                            enemies[p].hp = 0
+                if data[2][0] == "hps":
+                    for i in range(len(data[2][1]) - 1, -1, -1):
+                        if data[2][1][i] <= 0 and data[0][1][i] in enemies.keys():
+                            enemies[data[0][1][i]].hp = 1
+                        elif data[2][1][i] <= 0:
+                            my_tank.hp = 0
+                for e in enemies.keys():
+                    if e not in data[0][1]:
+                        enemies[e].hp = 0
 
         except:
             errors +=1
@@ -555,7 +574,8 @@ while play:
         for bomb in bombs:
             bomb.draw()
         for obj in objects:
-            obj.draw()
+            if obj.type != 'tank' or (obj.type == 'tank' and obj.hp > 0):
+                obj.draw()
         ui.draw()
         clock.tick(FPS)
 
