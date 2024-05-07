@@ -129,7 +129,6 @@ class UI:
                 tanks.append(obj)
                 if obj.hp > 0:
                     tanksAlive.append(obj)
-        print(len(tanksAlive))
         seconds = max(0, 180 - int(time() - time_started))
 
         if len(tanksAlive) <= 1 or seconds <= 0 or my_tank.hp <= 0:

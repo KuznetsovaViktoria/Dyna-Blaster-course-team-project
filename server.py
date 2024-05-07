@@ -79,13 +79,14 @@ HOST = '127.0.0.1'  # localhost
 PORT = 1093 # any above 1023
 main_socket.bind((HOST, PORT))
 main_socket.setblocking(0)
-kExpectedPlayers = 6    #change anytime
+kExpectedPlayers = 2    #change anytime
 main_socket.listen(kExpectedPlayers)   #change anytime
 
 # making connection with players
 players = []
 names = []
 colors = ["red", "blue", "gray", "white", "pink", "black", "orange", "yellow"]
+random.shuffle(colors)
 positions = []
 field_names = {field_name: 0 for field_name in fields.keys()}
 while True:
