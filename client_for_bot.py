@@ -1,5 +1,5 @@
 import pygame
-from my_bot import get_bot_move, set_first_params
+from bot_erika import get_bot_move, set_first_params
 import socket
 from pickle import loads, dumps
 from time import time, sleep
@@ -141,7 +141,8 @@ class UI:
             winnersText = 'Draw!' if len(winners) > 1 else f'{winners[0]} wins'
             if my_tank.hp <= 0:
                 winnersText = "Oops! You're dead :( "
-                if len(tanksAlive) <= 1 and winners != []:
+                # print(winners)
+                if len(tanksAlive) == 1 and winners != []:
                     winnersText += f'{winners[0]} wins'
                 else:
                     color = my_tank.color
@@ -493,6 +494,7 @@ map_menu.append_option('Scull field', lambda: game_play_pressed('scull_field'))
 map_menu.append_option('Busy field', lambda: game_play_pressed('busy_field'))
 map_menu.append_option('Labyrinth field', lambda: game_play_pressed('labyrinth_field'))
 map_menu.append_option('Random field', lambda: game_play_pressed('random_field'))
+map_menu.append_option('Custom field', lambda: game_play_pressed('custom_field'))
 
 bombs = []
 bangs = []
@@ -574,9 +576,7 @@ while play:
             errors +=1
         try:
             data = loads(sock.recv(1024 * 8))
-            if data == 'you are dead':
-                my_tank.hp = 0
-                ui.draw()
+
             errors = 0
             if len(data) > 0 and len(data[0]) > 1:
                 for i in range(len(data[0][1])): 
@@ -594,6 +594,9 @@ while play:
                 for e in enemies.keys():
                     if e not in data[0][1]:
                         enemies[e].hp = 0
+            if data == 'you are dead':
+                my_tank.hp = 0
+                ui.draw()
 
         except:
             errors +=1

@@ -1,3 +1,35 @@
+empty_field = [
+        ["E", "E", "E", "E", "E", "E", "E", "E", "E", "E", "E", "E", "E"],
+        ["E", "E", "E", "E", "E", "E", "E", "E", "E", "E", "E", "E", "E"],
+        ["E", "E", "E", "E", "E", "E", "E", "E", "E", "E", "E", "E", "E"],
+        ["E", "E", "E", "E", "E", "E", "E", "E", "E", "E", "E", "E", "E"],
+        ["E", "E", "E", "E", "E", "E", "E", "E", "E", "E", "E", "E", "E"],
+        ["E", "E", "E", "E", "E", "E", "E", "E", "E", "E", "E", "E", "E"],
+        ["E", "E", "E", "E", "E", "E", "E", "E", "E", "E", "E", "E", "E"],
+        ["E", "E", "E", "E", "E", "E", "E", "E", "E", "E", "E", "E", "E"],
+        ["E", "E", "E", "E", "E", "E", "E", "E", "E", "E", "E", "E", "E"],
+        ["E", "E", "E", "E", "E", "E", "E", "E", "E", "E", "E", "E", "E"],
+        ["E", "E", "E", "E", "E", "E", "E", "E", "E", "E", "E", "E", "E"],
+        ["E", "E", "E", "E", "E", "E", "E", "E", "E", "E", "E", "E", "E"],
+        ["E", "E", "E", "E", "E", "E", "E", "E", "E", "E", "E", "E", "E"]
+]
+
+def read_field_from_file(filename):
+        with open(filename, 'r') as f:
+                lines = [[c for c in line.rstrip()] for line in f]
+                if len(lines) != len(empty_field):
+                    print(f"wrong number of lines in {filename}")
+                    return empty_field
+                size = len(empty_field)
+                for line in lines:
+                    if len(line) != size or (line.count('E') + line.count('B') + line.count('W') + line.count('P')) != size:
+                        print("Bad line:", line)
+                        return empty_field
+                return lines
+
+
+custom_field = read_field_from_file('custom_field.txt')
+
 field1 = [
         ["E", "E", "E", "E", "W", "W", "E", "E", "W", "W", "W", "E", "W"],
         ["W", "B", "W", "B", "W", "B", "W", "B", "E", "B", "W", "B", "W"],
@@ -12,7 +44,7 @@ field1 = [
         ["W", "W", "E", "E", "W", "W", "E", "W", "W", "W", "E", "E", "E"],
         ["W", "B", "E", "B", "W", "B", "E", "B", "E", "B", "E", "B", "E"],
         ["W", "E", "W", "W", "E", "E", "W", "W", "W", "W", "W", "E", "E"]
-    ]
+]
 
 random_field = field1
 
@@ -30,7 +62,7 @@ field2 = [
         ["E", "B", "E", "B", "E", "B", "E", "B", "E", "B", "E", "B", "E"],
         ["E", "B", "E", "B", "E", "B", "E", "B", "E", "B", "E", "B", "E"],
         ["E", "E", "E", "B", "E", "E", "E", "B", "E", "E", "E", "B", "E"]
-    ]
+]
 
 labyrinth_field = field2
 
@@ -48,7 +80,7 @@ field3 = [
         ["W", "B", "W", "B", "B", "B", "W", "B", "B", "B", "W", "B", "W"],
         ["E", "B", "W", "W", "B", "W", "E", "W", "B", "W", "W", "B", "E"],
         ["E", "E", "W", "W", "W", "E", "E", "W", "W", "W", "W", "E", "E"]
-    ]
+]
 
 busy_field = field3
 
@@ -67,25 +99,11 @@ field4 = [
         ["E", "B", "E", "B", "E", "E", "E", "E", "E", "B", "E", "B", "E"],
         ["E", "B", "W", "B", "E", "B", "E", "B", "E", "B", "W", "B", "E"],
         ["E", "B", "W", "B", "W", "B", "E", "B", "W", "B", "W", "B", "E"]
-    ]
+]
 
 scull_field = field4
 
-empty_field = [
-        ["E", "E", "E", "E", "E", "E", "E", "E", "E", "E", "E", "E", "E"],
-        ["E", "E", "E", "E", "E", "E", "E", "E", "E", "E", "E", "E", "E"],
-        ["E", "E", "E", "E", "E", "E", "E", "E", "E", "E", "E", "E", "E"],
-        ["E", "E", "E", "E", "E", "E", "E", "E", "E", "E", "E", "E", "E"],
-        ["E", "E", "E", "E", "E", "E", "E", "E", "E", "E", "E", "E", "E"],
-        ["E", "E", "E", "E", "E", "E", "E", "E", "E", "E", "E", "E", "E"],
-        ["E", "E", "E", "E", "E", "E", "E", "E", "E", "E", "E", "E", "E"],
-        ["E", "E", "E", "E", "E", "E", "E", "E", "E", "E", "E", "E", "E"],
-        ["E", "E", "E", "E", "E", "E", "E", "E", "E", "E", "E", "E", "E"],
-        ["E", "E", "E", "E", "E", "E", "E", "E", "E", "E", "E", "E", "E"],
-        ["E", "E", "E", "E", "E", "E", "E", "E", "E", "E", "E", "E", "E"],
-        ["E", "E", "E", "E", "E", "E", "E", "E", "E", "E", "E", "E", "E"],
-        ["E", "E", "E", "E", "E", "E", "E", "E", "E", "E", "E", "E", "E"]
-    ]
+
 
 
 # BLOCKS = [

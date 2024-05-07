@@ -8,7 +8,7 @@ POINTS_HEIGHT = 4 * TILE
 HEIGHT = WIDTH + POINTS_HEIGHT
 BLOCKS = []
 BLOCKS_CANT_BROKE = []
-fields = {"empty_field": empty_field, "random_field": random_field, "scull_field":scull_field, "busy_field": busy_field, "labyrinth_field": labyrinth_field}
+fields = {"custom_field": custom_field, "empty_field": empty_field, "random_field": random_field, "scull_field":scull_field, "busy_field": busy_field, "labyrinth_field": labyrinth_field}
 
 def fieldToArray(field_name):
     global BLOCKS, BLOCKS_CANT_BROKE, FIELD, positions
@@ -22,6 +22,8 @@ def fieldToArray(field_name):
                 BLOCKS_CANT_BROKE.append((j * TILE, i* TILE + POINTS_HEIGHT))
             elif FIELD[i][j] == "W":
                 BLOCKS.append((j * TILE, i* TILE + POINTS_HEIGHT))
+            elif FIELD[i][j] == "P":
+                positions.append((j * TILE, i * TILE + POINTS_HEIGHT))
     # FIELD = keys[0]
 
 
@@ -40,6 +42,13 @@ def fieldToArray(field_name):
     elif field_name == "labyrinth_field":
         positions = [[0, POINTS_HEIGHT], [WIDTH - TILE, HEIGHT - TILE], [TILE * 7, POINTS_HEIGHT], [TILE * 5, HEIGHT - TILE],
                      [3 * TILE, POINTS_HEIGHT], [TILE * 9, HEIGHT - TILE], [TILE * 11, POINTS_HEIGHT], [TILE, HEIGHT - TILE]]
+    # else:
+    #     positions = []
+    #     # сделать рандом
+    #     positions = [[0, POINTS_HEIGHT], [WIDTH - TILE, HEIGHT - TILE], [WIDTH - TILE, POINTS_HEIGHT], [0, HEIGHT - TILE],
+    #                  [TILE * 6, POINTS_HEIGHT + TILE * 2], [TILE * 6, HEIGHT - TILE * 3], [TILE * 3, HEIGHT - TILE * 7],
+    #                  [WIDTH - TILE * 4, HEIGHT - TILE * 7]]
+
 
 class Player:
     def __init__(self, sock, name, color):
